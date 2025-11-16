@@ -1,11 +1,13 @@
+'use client'
+
 import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
 
-export const metadata: Metadata = {
-  title: "Gale UI",
-  description: "Gale User Interface",
-};
+// export const metadata: Metadata = {
+//   title: "Gale UI",
+//   description: "Gale User Interface",
+// };
 
 export default function RootLayout({
   children,
@@ -16,9 +18,11 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="icon" href="/favicon.ico" />
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="theme-color" content="#000000" />
         <meta name="description" content="Gale UI app" />
+        <title>Gale UI</title>
       </head>
       <body className="antialiased">
         {/* Fixed Header */}

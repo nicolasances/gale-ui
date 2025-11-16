@@ -1,83 +1,62 @@
+'use client';
+
+import { AgentDefinition, GaleBrokerAPI } from "@/api/GaleBrokerAPI";
+import { useEffect, useState } from "react";
+
+interface SchemaProperty {
+  name: string;
+  type: string;
+  description?: string;
+  required: boolean;
+}
+
+function SchemaProperties({ schema }: { schema: any }) {
+  if (!schema || !schema.properties) {
+    return <p className="text-xs text-gray-400">No properties defined</p>;
+  }
+
+  const requiredFields = schema.required || [];
+  const properties: SchemaProperty[] = Object.entries(schema.properties).map(([name, prop]: [string, any]) => ({
+    name,
+    type: prop.type || 'unknown',
+    description: prop.description,
+    required: requiredFields.includes(name)
+  }));
+
+  return (
+    <div className="space-y-3">
+      {properties.map((prop) => (
+        <div key={prop.name} className="border-l-2 border-gray-300 pl-3">
+          <div className="flex items-baseline gap-1">
+            {prop.required && <span className="text-red-500 text-sm">*</span>}
+            <span className="font-mono text-sm font-medium text-gray-900">{prop.name}</span>
+            <span className="text-xs text-gray-500">({prop.type})</span>
+          </div>
+          {prop.description && (
+            <p className="text-xs text-gray-600 mt-1">{prop.description}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function AgentsPage() {
-  // Mock agents data based on GaleAgent manifest
-  const agents = [
-    {
-      agentName: "TomeSectionClassifier",
-      taskId: "topic.section.classify",
-      description: "Agent for labelling sections of a Tome Topic. This agent analyzes the content of a section and assigns one or more predefined labels based on the content's characteristics.",
-      inputSchema: {
-        topicId: "string",
-        topicCode: "string",
-        sectionCode: "string",
-        sectionIndex: "number"
-      },
-      outputSchema: {
-        topicCode: "string",
-        sectionCode: "string",
-        sectionIndex: "number",
-        labels: "array<string>"
-      }
-    },
-    {
-      agentName: "TopicPracticeGenerator",
-      taskId: "topic.practice.generate",
-      description: "Agent for generating practice exercises for a Tome Topic. This agent creates questions, flashcards, and practice activities based on topic content.",
-      inputSchema: {
-        topicId: "string",
-        topicCode: "string",
-        difficulty: "string"
-      },
-      outputSchema: {
-        topicCode: "string",
-        exercises: "array<object>",
-        flashcards: "array<object>"
-      }
-    },
-    {
-      agentName: "ContentSummarizer",
-      taskId: "content.summarize",
-      description: "Agent that creates concise summaries of educational content. Uses advanced NLP to extract key concepts and main ideas from lengthy texts.",
-      inputSchema: {
-        contentId: "string",
-        maxLength: "number",
-        language: "string"
-      },
-      outputSchema: {
-        contentId: "string",
-        summary: "string",
-        keyPoints: "array<string>"
-      }
-    },
-    {
-      agentName: "QuizOrchestrator",
-      taskId: "quiz.orchestrate",
-      description: "Orchestrator agent that coordinates quiz generation across multiple topics. Manages workflow between content retrieval, question generation, and validation agents.",
-      inputSchema: {
-        topicIds: "array<string>",
-        questionCount: "number",
-        difficulty: "string"
-      },
-      outputSchema: {
-        quizId: "string",
-        questions: "array<object>",
-        status: "string"
-      }
-    },
-    {
-      agentName: "KnowledgeGraphBuilder",
-      taskId: "knowledge.graph.build",
-      description: "Agent that constructs knowledge graphs from educational content. Identifies entities, relationships, and hierarchies to create interconnected learning maps.",
-      inputSchema: {
-        topicCode: "string",
-        depth: "number"
-      },
-      outputSchema: {
-        topicCode: "string",
-        nodes: "array<object>",
-        edges: "array<object>"
-      }
-    }
-  ];
+
+  const [agents, setAgents] = useState<AgentDefinition[]>([]);
+
+  /**
+   * Loads the agents from the Gale Broker API
+   */
+  const load = async () => {
+
+    const response = await new GaleBrokerAPI().getAgents();
+
+    setAgents(response.agents);
+
+  }
+
+  useEffect(() => {load();}, []);
 
   return (
     <div>
@@ -92,7 +71,7 @@ export default function AgentsPage() {
           >
             <div className="flex items-start justify-between mb-3">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">{agent.agentName}</h2>
+                <h2 className="text-xl font-semibold text-gray-900">{agent.name}</h2>
                 <p className="text-sm text-blue-600 font-mono">{agent.taskId}</p>
               </div>
               <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
@@ -104,20 +83,16 @@ export default function AgentsPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-2">Input Schema</h3>
+                <h3 className="text-sm font-semibold text-gray-600 mb-3">Input Schema</h3>
                 <div className="bg-gray-50 rounded p-3">
-                  <pre className="text-xs text-gray-700 font-mono">
-                    {JSON.stringify(agent.inputSchema, null, 2)}
-                  </pre>
+                  <SchemaProperties schema={agent.inputSchema} />
                 </div>
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-2">Output Schema</h3>
+                <h3 className="text-sm font-semibold text-gray-600 mb-3">Output Schema</h3>
                 <div className="bg-gray-50 rounded p-3">
-                  <pre className="text-xs text-gray-700 font-mono">
-                    {JSON.stringify(agent.outputSchema, null, 2)}
-                  </pre>
+                  <SchemaProperties schema={agent.outputSchema} />
                 </div>
               </div>
             </div>
