@@ -20,6 +20,17 @@ export class GaleBrokerAPI {
         return (await new TotoAPI().fetch('gale-broker', `/tasks`)).json()
     }
 
+    /**
+     * Gets the execution graph for a specific correlation id (<=> root task).
+     * 
+     * @param correlationId the correlation id
+     * @returns the execution graph
+     */
+    async getExecutionGraph(correlationId: string): Promise<GetExecutionGraphResponse> {
+        return (await new TotoAPI().fetch('gale-broker', `/tasks/${correlationId}/graph`)).json()
+    }
+
+
 }
 
 interface GetAgentsResponse {
@@ -28,6 +39,19 @@ interface GetAgentsResponse {
 
 interface GetRootTasksResponse {
     tasks: TaskStatusRecord[];
+}
+
+interface GetExecutionGraphResponse {
+    graph: TaskExecutionGraph;
+}
+
+export interface TaskExecutionGraph {
+    rootNode: TaskExecutionGraphNode;
+}
+
+export interface TaskExecutionGraphNode {
+    record: TaskStatusRecord
+    children: TaskExecutionGraphNode[] | null
 }
 
 export interface AgentDefinition {

@@ -2,9 +2,11 @@
 
 import { GaleBrokerAPI, TaskStatus, TaskStatusRecord, TaskStopReason } from "@/api/GaleBrokerAPI";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ExecutionsPage() {
 
+  const router = useRouter();
   const [tasks, setTasks] = useState<TaskStatusRecord[]>([]);
   const [expandedExecutions, setExpandedExecutions] = useState<Set<string>>(new Set());
 
@@ -60,7 +62,8 @@ export default function ExecutionsPage() {
         {tasks.map((execution) => (
           <div
             key={execution.taskInstanceId}
-            className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow"
+            className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => router.push(`/executions/${execution.correlationId}`)}
           >
             {/* Main execution info */}
             <div className="grid grid-cols-6 gap-4 items-start mb-3">
