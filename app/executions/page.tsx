@@ -42,7 +42,18 @@ export default function ExecutionsPage() {
 
   return (
     <div>
-      <h1 className="text-4xl font-bold mb-6">Task Executions</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-4xl font-bold">Task Executions</h1>
+        <button
+          onClick={loadTasks}
+          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+          title="Refresh"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+      </div>
       <p className="text-gray-600 mb-8">History of all task executions in Gale</p>
 
       <div className="space-y-3">
