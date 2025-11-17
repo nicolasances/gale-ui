@@ -1,6 +1,6 @@
 'use client';
 
-import { GaleBrokerAPI, TaskExecutionGraphNode, TaskStatus, TaskStopReason } from "@/api/GaleBrokerAPI";
+import { GaleBrokerAPI, TaskExecutionGraphNode, TaskStatus } from "@/api/GaleBrokerAPI";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import ReactFlow, {
@@ -16,69 +16,6 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-function StatusBadge({ status, stopReason }: { status: TaskStatus, stopReason?: TaskStopReason }) {
-    const colors = {
-        published: "bg-gray-100 text-gray-800",
-        started: "bg-blue-100 text-blue-800",
-        waiting: "bg-yellow-100 text-yellow-800",
-        completed: "bg-green-100 text-green-800",
-        failed: "bg-red-100 text-red-800",
-        childrenCompleted: "bg-purple-100 text-purple-800"
-    };
-
-    return (
-        <div className="flex flex-col gap-1">
-            <span className={`px-2 py-1 ${colors[status]} text-xs font-medium rounded-full text-center`}>
-                {status}
-            </span>
-        </div>
-    );
-}
-
-/**
- * Displays a task node in the React Flow graph.
- * @returns 
- */
-function TaskNodeComponent({ data }: { data: any }) {
-
-    const formatDuration = (ms?: number) => {
-        if (ms === undefined) return '-';
-        if (ms < 1000) return `${ms}ms`;
-        return `${(ms / 1000).toFixed(2)}s`;
-    };
-
-    return (
-        <div className="bg-white border-2 border-gray-300 rounded-lg p-4 shadow-md min-w-[280px]">
-            {!data.root && <Handle type="target" position={Position.Top} />}
-            <div className="space-y-3">
-                {/* Agent Name */}
-                <div>
-                    <p className="text-xs text-gray-500 mb-1">Agent</p>
-                    <p className="text-sm font-semibold text-gray-900">{data.agentName || '-'}</p>
-                </div>
-
-                {/* Task ID */}
-                <div>
-                    <p className="text-xs text-gray-500 mb-1">Task ID</p>
-                    <p className="font-mono text-xs text-blue-600 break-all">{data.taskId}</p>
-                </div>
-
-                {/* Status and Stop Reason */}
-                <div>
-                    <p className="text-xs text-gray-500 mb-1">Status</p>
-                    <StatusBadge status={data.status} stopReason={data.stopReason} />
-                </div>
-
-                {/* Execution Time */}
-                <div>
-                    <p className="text-xs text-gray-500 mb-1">Execution Time</p>
-                    <p className="text-sm font-mono text-gray-900">{formatDuration(data.executionTimeMs)}</p>
-                </div>
-            </div>
-            {!data.leaf && <Handle type="source" position={Position.Bottom} />}
-        </div>
-    );
-}
 
 const nodeTypes = {
     taskNode: TaskNodeComponent,
@@ -268,6 +205,74 @@ export default function ExecutionDetailPage() {
                     <p className="text-gray-500">No execution graph found</p>
                 </div>
             )}
+        </div>
+    );
+}
+
+/**
+ * Label badge for task status
+ * @returns 
+ */
+function StatusBadge({ status }: { status: TaskStatus }) {
+    const colors = {
+        published: "bg-gray-100 text-gray-800",
+        started: "bg-blue-100 text-blue-800",
+        waiting: "bg-yellow-100 text-yellow-800",
+        completed: "bg-green-100 text-green-800",
+        failed: "bg-red-100 text-red-800",
+        childrenCompleted: "bg-purple-100 text-purple-800"
+    };
+
+    return (
+        <div className="flex flex-col gap-1">
+            <span className={`px-2 py-1 ${colors[status]} text-xs font-medium rounded-full text-center`}>
+                {status}
+            </span>
+        </div>
+    );
+}
+
+/**
+ * Displays a task node in the React Flow graph.
+ * @returns 
+ */
+function TaskNodeComponent({ data }: { data: any }) {
+
+    const formatDuration = (ms?: number) => {
+        if (ms === undefined) return '-';
+        if (ms < 1000) return `${ms}ms`;
+        return `${(ms / 1000).toFixed(2)}s`;
+    };
+
+    return (
+        <div className="bg-white border-2 border-gray-300 rounded-lg p-4 shadow-md min-w-[280px]">
+            {!data.root && <Handle type="target" position={Position.Top} />}
+            <div className="space-y-3">
+                {/* Agent Name */}
+                <div>
+                    <p className="text-xs text-gray-500 mb-1">Agent</p>
+                    <p className="text-sm font-semibold text-gray-900">{data.agentName || '-'}</p>
+                </div>
+
+                {/* Task ID */}
+                <div>
+                    <p className="text-xs text-gray-500 mb-1">Task ID</p>
+                    <p className="font-mono text-xs text-blue-600 break-all">{data.taskId}</p>
+                </div>
+
+                {/* Status and Stop Reason */}
+                <div>
+                    <p className="text-xs text-gray-500 mb-1">Status</p>
+                    <StatusBadge status={data.status} />
+                </div>
+
+                {/* Execution Time */}
+                <div>
+                    <p className="text-xs text-gray-500 mb-1">Execution Time</p>
+                    <p className="text-sm font-mono text-gray-900">{formatDuration(data.executionTimeMs)}</p>
+                </div>
+            </div>
+            {!data.leaf && <Handle type="source" position={Position.Bottom} />}
         </div>
     );
 }
