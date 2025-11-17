@@ -33,6 +33,7 @@ jobs:
       run: |
         docker build \
         --build-arg GALE_BROKER_API_ENDPOINT=${{ vars.GALE_BROKER_API_ENDPOINT }} \
+        --build-arg GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
         . -t europe-west1-docker.pkg.dev/${{ secrets.GCP_PID }}/${{env.PACKAGE_NAME}}/${{env.PACKAGE_NAME}}:${{env.PACKAGE_VERSION}}
  
     - name: Push Docker image to Dockerhub 

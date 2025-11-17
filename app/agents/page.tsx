@@ -26,16 +26,20 @@ function SchemaProperties({ schema }: { schema: any }) {
   return (
     <div className="space-y-3">
       {properties.map((prop) => (
-        <div key={prop.name} className="border-l-2 border-gray-300 pl-3">
+
+        <div key={prop.name} className="border-l-4 border-blue-300 pl-3">
+        
           <div className="flex items-baseline gap-1">
-            {prop.required && <span className="text-red-500 text-sm">*</span>}
             <span className="font-mono text-sm font-medium text-gray-900">{prop.name}</span>
+            {prop.required && <span className="text-red-500 text-sm">*</span>}
             <span className="text-xs text-gray-500">({prop.type})</span>
           </div>
+        
           {prop.description && (
             <p className="text-xs text-gray-600 mt-1">{prop.description}</p>
           )}
         </div>
+
       ))}
     </div>
   );
@@ -44,6 +48,7 @@ function SchemaProperties({ schema }: { schema: any }) {
 export default function AgentsPage() {
 
   const [agents, setAgents] = useState<AgentDefinition[]>([]);
+  const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
 
   /**
    * Loads the agents from the Gale Broker API
@@ -55,6 +60,18 @@ export default function AgentsPage() {
     setAgents(response.agents);
 
   }
+
+  const toggleSchemas = (taskId: string) => {
+    setExpandedAgents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {load();}, []);
 
@@ -81,21 +98,30 @@ export default function AgentsPage() {
 
             <p className="text-gray-700 mb-4">{agent.description}</p>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-3">Input Schema</h3>
-                <div className="bg-gray-50 rounded p-3">
-                  <SchemaProperties schema={agent.inputSchema} />
-                </div>
-              </div>
+            <button
+              onClick={() => toggleSchemas(agent.taskId)}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium mb-4"
+            >
+              {expandedAgents.has(agent.taskId) ? '▼ Hide Schemas' : '▶ Show Schemas'}
+            </button>
 
-              <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-3">Output Schema</h3>
-                <div className="bg-gray-50 rounded p-3">
-                  <SchemaProperties schema={agent.outputSchema} />
+            {expandedAgents.has(agent.taskId) && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3">Input Schema</h3>
+                  <div className="bg-gray-50 rounded p-3 pl-2">
+                    <SchemaProperties schema={agent.inputSchema} />
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3">Output Schema</h3>
+                  <div className="bg-gray-50 rounded p-3">
+                    <SchemaProperties schema={agent.outputSchema} />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         ))}
       </div>
