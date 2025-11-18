@@ -13,6 +13,10 @@ import ReactFlow, {
     MarkerType,
     Position,
     Handle,
+    getBezierPath,
+    BaseEdge,
+    EdgeLabelRenderer,
+    useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -20,6 +24,10 @@ import 'reactflow/dist/style.css';
 const nodeTypes = {
     taskNode: TaskNodeComponent,
 };
+
+const edgeTypes = {
+    customEdge: CustomEdge,
+}
 
 export default function ExecutionDetailPage() {
 
@@ -94,13 +102,16 @@ export default function ExecutionDetailPage() {
                     id: `edge-${parentId}-${nodeId}`,
                     source: parentId,
                     target: nodeId,
-                    // type: 'smoothstep',
+                    type: 'customEdge',
                     animated: node.record.status === 'started' || node.record.status === 'waiting',
                     style: { stroke: '#bbc2ceff', strokeWidth: 3 },
                     markerEnd: {
                         type: MarkerType.ArrowClosed,
                         color: '#213963ff',
                     },
+                    data: {
+                        input: node.record.taskInput
+                    }
                 });
             }
 
@@ -142,10 +153,6 @@ export default function ExecutionDetailPage() {
             setRootNode(response.graph.rootNode);
 
             const { nodes: flowNodes, edges: flowEdges } = buildFlowGraph(response.graph.rootNode);
-
-            console.log('Generated nodes:', flowNodes.length, 'edges:', flowEdges.length);
-            console.log('Nodes:', flowNodes);
-            console.log('Edges:', flowEdges);
 
             setNodes(flowNodes);
             setEdges(flowEdges);
@@ -192,6 +199,7 @@ export default function ExecutionDetailPage() {
                         onNodesChange={onNodesChange}
                         onEdgesChange={onEdgesChange}
                         nodeTypes={nodeTypes}
+                        edgeTypes={edgeTypes}
                         fitView
                         fitViewOptions={{ padding: 0.2 }}
                         proOptions={{ hideAttribution: true }}
@@ -274,5 +282,102 @@ function TaskNodeComponent({ data }: { data: any }) {
             </div>
             {!data.leaf && <Handle type="source" position={Position.Bottom} />}
         </div>
+    );
+}
+
+function CustomEdge({ id, source, target, data }: any) {
+
+    const reactFlow = useReactFlow();
+    const [showPopup, setShowPopup] = useState(false);
+
+    const sourceNode = reactFlow.getNode(source)!;
+    const targetNode = reactFlow.getNode(target)!;
+
+    const [path] = getBezierPath({
+        sourceX: sourceNode.position.x + sourceNode.width! / 2,
+        sourceY: sourceNode.position.y + sourceNode.height!,
+        sourcePosition: Position.Bottom,
+        targetX: targetNode.position.x + targetNode.width! / 2,
+        targetY: targetNode.position.y,
+        targetPosition: Position.Top,
+    });
+
+    // Position label at the top center of the target node
+    const labelX = targetNode.position.x + (targetNode.width! / 2);
+    const labelY = targetNode.position.y;
+
+    const labelStyle = {
+        position: 'absolute' as 'absolute',
+        transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+        pointerEvents: 'all' as 'all'
+    }
+
+    const handleLabelClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setShowPopup(!showPopup);
+    };
+
+    const handlePopupClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+    };
+
+    // Close popup when clicking outside
+    useEffect(() => {
+        if (!showPopup) return;
+
+        const handleClickOutside = () => {
+            setShowPopup(false);
+        };
+
+        document.addEventListener('click', handleClickOutside);
+
+        return () => document.removeEventListener('click', handleClickOutside);
+        
+    }, [showPopup]);
+
+    const renderInputData = (input: any) => {
+        if (!input || typeof input !== 'object') {
+            return <p className="text-sm text-gray-600">{String(input)}</p>;
+        }
+
+        return (
+            <div className="space-y-2">
+                {Object.entries(input).map(([key, value]) => (
+                    <div key={key} className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase">{key}</span>
+                        <span className="text-sm text-gray-900 font-mono break-all">
+                            {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    return (
+        <>
+            <BaseEdge id={id} path={path} />
+            <EdgeLabelRenderer>
+                <div style={labelStyle} className="relative z-[2000]">
+                    <div 
+                        onClick={handleLabelClick}
+                        className="cursor-pointer text-sm font-semibold text-gray-600 bg-cyan-400 rounded-full px-3 py-1 flex items-center hover:shadow-lg transition-shadow"
+                    >
+                        input
+                    </div>
+                    
+                    {showPopup && data?.input && (
+                        <div 
+                            onClick={handlePopupClick}
+                            style={{transform: 'translate(-50%, 0)', zIndex: 99}}
+                            className="absolute top-8 left-0 bg-white border-2 border-gray-300 rounded-lg shadow-xl p-4 min-w-[300px] max-w-[500px]"
+                        >
+                            <h3 className="text-sm font-bold text-gray-700 mb-3 border-b pb-2">Task Input</h3>
+                            {renderInputData(data.input)}
+                        </div>
+                    )}
+                </div>
+            </EdgeLabelRenderer>
+        </>
     );
 }
