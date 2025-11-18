@@ -9,6 +9,9 @@ export default {
 	],
 	theme: {
 		extend: {
+			fontFamily: {
+				sans: ['"Comfortaa"', 'sans-serif'],
+			},
 			colors: {
 				background: 'var(--background)',
 				foreground: 'var(--foreground)',

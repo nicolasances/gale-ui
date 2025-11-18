@@ -16,9 +16,12 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="theme-color" content="#000000" />
         <meta name="description" content="Gale UI app" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap" rel="stylesheet" />
         <title>Gale UI</title>
       </head>
-      <body className="antialiased">
+      <body className="antialiased font-sans">
         {/* Fixed Header */}
         <header className="fixed top-0 left-0 right-0 h-16 bg-[#1e3a5f] text-white z-50 flex items-center px-6 shadow-md">
           <h1 className="text-xl font-semibold">Gale UI</h1>

@@ -92,6 +92,7 @@ export default function ExecutionDetailPage() {
                     status: node.record.status,
                     stopReason: node.record.stopReason,
                     executionTimeMs: node.record.executionTimeMs,
+                    taskOutput: node.record.taskOutput,
                 },
                 sourcePosition: Position.Bottom,
                 targetPosition: Position.Top,
@@ -110,7 +111,7 @@ export default function ExecutionDetailPage() {
                         color: '#213963ff',
                     },
                     data: {
-                        input: node.record.taskInput
+                        input: node.record.taskInput, 
                     }
                 });
             }
@@ -246,11 +247,34 @@ function StatusBadge({ status }: { status: TaskStatus }) {
  */
 function TaskNodeComponent({ data }: { data: any }) {
 
+    const [showOutputPopup, setShowOutputPopup] = useState(false);
+
     const formatDuration = (ms?: number) => {
         if (ms === undefined) return '-';
         if (ms < 1000) return `${ms}ms`;
         return `${(ms / 1000).toFixed(2)}s`;
     };
+
+    const handleOutputClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setShowOutputPopup(!showOutputPopup);
+    };
+
+    const handlePopupClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+    };
+
+    // Close popup when clicking outside
+    useEffect(() => {
+        if (!showOutputPopup) return;
+
+        const handleClickOutside = () => {
+            setShowOutputPopup(false);
+        };
+
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [showOutputPopup]);
 
     return (
         <div className="bg-white border-2 border-gray-300 rounded-lg p-4 shadow-md min-w-[280px]">
@@ -275,9 +299,18 @@ function TaskNodeComponent({ data }: { data: any }) {
                 </div>
 
                 {/* Execution Time */}
-                <div>
-                    <p className="text-xs text-gray-500 mb-1">Execution Time</p>
-                    <p className="text-sm font-mono text-gray-900">{formatDuration(data.executionTimeMs)}</p>
+                <div className="flex flex-row items-center">
+                    <div className="flex-1">
+                        <p className="text-xs text-gray-500 mb-1">Execution Time</p>
+                        <p className="text-sm font-mono text-gray-900">{formatDuration(data.executionTimeMs)}</p>
+                    </div>
+                    <div className="relative z-[1000]">
+                        <div onClick={handleOutputClick} className="cursor-pointer text-sm font-semibold text-gray-600 bg-cyan-400 rounded-md px-3 py-1 flex items-center hover:shadow-lg transition-shadow">
+                            output
+                        </div>
+
+                        {showOutputPopup && data.taskOutput && <TaskDataPopup handlePopupClick={handlePopupClick} data={data.taskOutput} label="Task Output" />}
+                    </div>
                 </div>
             </div>
             {!data.leaf && <Handle type="source" position={Position.Bottom} />}
@@ -332,7 +365,7 @@ function CustomEdge({ id, source, target, data }: any) {
         document.addEventListener('click', handleClickOutside);
 
         return () => document.removeEventListener('click', handleClickOutside);
-        
+
     }, [showPopup]);
 
     const renderInputData = (input: any) => {
@@ -344,8 +377,8 @@ function CustomEdge({ id, source, target, data }: any) {
             <div className="space-y-2">
                 {Object.entries(input).map(([key, value]) => (
                     <div key={key} className="flex flex-col">
-                        <span className="text-xs font-semibold text-gray-500 uppercase">{key}</span>
-                        <span className="text-sm text-gray-900 font-mono break-all">
+                        <span className="text-xs font-semibold text-gray-500">{key}</span>
+                        <span className="text-sm text-gray-900 font-mono font-bold break-all">
                             {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
                         </span>
                     </div>
@@ -359,25 +392,41 @@ function CustomEdge({ id, source, target, data }: any) {
             <BaseEdge id={id} path={path} />
             <EdgeLabelRenderer>
                 <div style={labelStyle} className="relative z-[2000]">
-                    <div 
-                        onClick={handleLabelClick}
-                        className="cursor-pointer text-sm font-semibold text-gray-600 bg-cyan-400 rounded-full px-3 py-1 flex items-center hover:shadow-lg transition-shadow"
-                    >
+                    <div onClick={handleLabelClick} className="cursor-pointer text-sm font-semibold text-gray-600 bg-cyan-400 rounded-md px-3 py-1 flex items-center hover:shadow-lg transition-shadow" >
                         input
                     </div>
-                    
-                    {showPopup && data?.input && (
-                        <div 
-                            onClick={handlePopupClick}
-                            style={{transform: 'translate(-50%, 0)', zIndex: 99}}
-                            className="absolute top-8 left-0 bg-white border-2 border-gray-300 rounded-lg shadow-xl p-4 min-w-[300px] max-w-[500px]"
-                        >
-                            <h3 className="text-sm font-bold text-gray-700 mb-3 border-b pb-2">Task Input</h3>
-                            {renderInputData(data.input)}
-                        </div>
-                    )}
+                    {showPopup && data?.input && <TaskDataPopup handlePopupClick={handlePopupClick} data={data.input} label="Task Input" />}
                 </div>
             </EdgeLabelRenderer>
         </>
     );
+}
+
+function TaskDataPopup({ handlePopupClick, data, label }: { handlePopupClick: (e: React.MouseEvent) => void, data: any, label: string }) {
+
+    return (
+        <div onClick={handlePopupClick} style={{ transform: 'translate(-50%, 0)', zIndex: 99 }} className="bg-cyan-100 absolute top-8 left-0 rounded-lg shadow-xl p-4 min-w-[300px] max-w-[500px]">
+            <h3 className="text-sm text-gray-400 mb-3 border-b pb-2 border-gray-300">{label}</h3>
+            {typeof data === 'object' && (
+                <div className="space-y-2">
+                    {Object.entries(data).map(([key, value]) => (
+                        <TaskData key={key} label={key} value={value} />
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
+
+function TaskData({ label, value }: { label: string, value: any }) {
+
+    return (
+        <div className="flex flex-col">
+            <span className="text-xs font-semibold text-gray-500">{label}</span>
+            <span className="text-sm text-gray-900 font-mono font-bold break-all">
+                {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
+            </span>
+        </div>
+    )
+
 }
