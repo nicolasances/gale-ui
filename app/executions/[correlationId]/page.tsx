@@ -368,25 +368,6 @@ function CustomEdge({ id, source, target, data }: any) {
 
     }, [showPopup]);
 
-    const renderInputData = (input: any) => {
-        if (!input || typeof input !== 'object') {
-            return <p className="text-sm text-gray-600">{String(input)}</p>;
-        }
-
-        return (
-            <div className="space-y-2">
-                {Object.entries(input).map(([key, value]) => (
-                    <div key={key} className="flex flex-col">
-                        <span className="text-xs font-semibold text-gray-500">{key}</span>
-                        <span className="text-sm text-gray-900 font-mono font-bold break-all">
-                            {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
-                        </span>
-                    </div>
-                ))}
-            </div>
-        );
-    };
-
     return (
         <>
             <BaseEdge id={id} path={path} />
