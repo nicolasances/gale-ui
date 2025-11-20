@@ -42,6 +42,7 @@ export default function ExecutionDetailPage() {
     const [loading, setLoading] = useState(true);
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    const [selectedNode, setSelectedNode] = useState<any | null>(null);
 
     /**
      * Builds the React Flow nodes and edges from the task execution graph.
@@ -98,12 +99,16 @@ export default function ExecutionDetailPage() {
                     leaf: leaf,
                     agentName: node.record.agentName,
                     taskId: node.record.taskId,
+                    taskInstanceId: node.record.taskInstanceId,
                     status: node.record.status,
                     stopReason: node.record.stopReason,
                     executionTimeMs: node.record.executionTimeMs,
                     taskOutput: node.record.taskOutput,
+                    taskInput: node.record.taskInput,
                     resumedAfterSubtasksGroupId: node.record.resumedAfterSubtasksGroupId, 
-                    agentType: node.record.resumedAfterSubtasksGroupId || !node.record.parentTaskId ? "orchestrator" : "agent"
+                    agentType: node.record.resumedAfterSubtasksGroupId || !node.record.parentTaskId ? "orchestrator" : "agent",
+                    onNodeClick: setSelectedNode,
+                    isSelected: false
                 },
                 sourcePosition: Position.Bottom,
                 targetPosition: Position.Top,
@@ -236,6 +241,19 @@ export default function ExecutionDetailPage() {
 
     useEffect(() => { loadGraph(); }, [loadGraph]);
 
+    // Update nodes when selection changes
+    useEffect(() => {
+        setNodes((nds) =>
+            nds.map((node) => ({
+                ...node,
+                data: {
+                    ...node.data,
+                    isSelected: selectedNode?.taskInstanceId === node.id
+                }
+            }))
+        );
+    }, [selectedNode, setNodes]);
+
     return (
         <div className="h-screen flex flex-col">
             <div className="flex items-center gap-4 mb-6 p-6 pb-0">
@@ -274,6 +292,12 @@ export default function ExecutionDetailPage() {
                         <Background />
                         <Controls />
                     </ReactFlow>
+                    {selectedNode && (
+                        <NodeDetailPanel 
+                            node={selectedNode} 
+                            onClose={() => setSelectedNode(null)} 
+                        />
+                    )}
                 </div>
             ) : (
                 <div className="flex justify-center items-center flex-1">
@@ -293,9 +317,9 @@ function StatusBadge({ status }: { status: TaskStatus }) {
         published: "bg-gray-100 text-gray-800",
         started: "bg-blue-100 text-blue-800",
         waiting: "bg-yellow-100 text-yellow-800",
-        completed: "bg-green-100 text-green-800",
+        completed: "bg-green-300 text-green-800",
         failed: "bg-red-100 text-red-800",
-        childrenCompleted: "bg-green-100 text-green-800"
+        childrenCompleted: "bg-green-300 text-green-800"
     };
 
     return (
@@ -335,8 +359,17 @@ function AgentTypeIcon({ agentType }: { agentType: string }) {
  */
 function TaskNodeComponent({ data }: { data: any }) {
 
+    const handleClick = () => {
+        if (data.onNodeClick) {
+            data.onNodeClick(data);
+        }
+    };
+
     return (
-        <div className={`bg-white border-2 border-gray-300 rounded-lg p-3 shadow-md min-w-[280px] w-[${NODE_WIDTH}px] max-w-[${NODE_WIDTH}px]`}>
+        <div 
+            onClick={handleClick}
+            className={`${data.isSelected ? 'bg-blue-50' : 'bg-white'} border-gray-300 border-2 rounded-lg p-3 shadow-md min-w-[280px] w-[${NODE_WIDTH}px] max-w-[${NODE_WIDTH}px] cursor-pointer hover:shadow-lg hover:border-gray-400 transition-all`}
+        >
             {!data.root && <Handle type="target" position={Position.Top} />}
             <div className="space-y-3">
                 {/* Agent Name */}
@@ -355,6 +388,104 @@ function TaskNodeComponent({ data }: { data: any }) {
             </div>
             {!data.leaf && <Handle type="source" position={Position.Bottom} />}
         </div>
+    );
+}
+
+/**
+ * Side panel displaying detailed information about a selected node
+ */
+function NodeDetailPanel({ node, onClose }: { node: any; onClose: () => void }) {
+    
+    const formatExecutionTime = (ms?: number) => {
+        if (!ms) return '-';
+        if (ms < 1000) return `${ms}ms`;
+        return `${(ms / 1000).toFixed(2)}s`;
+    };
+
+    return (
+        <aside className="fixed top-16 right-0 bottom-0 w-96 bg-white shadow-xl z-40 overflow-y-auto border-l border-gray-200">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+                <h2 className="text-base font-semibold text-gray-900">Agent Execution</h2>
+                <button
+                    onClick={onClose}
+                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                    title="Close"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4">
+                <div className="space-y-2">
+                    {/* Agent Name */}
+                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <label className="text-xs font-semibold text-gray-500 uppercase block">Agent Name</label>
+                        <div className="mt-1 text-sm text-gray-900 font-medium">{node.agentName || '-'}</div>
+                    </div>
+
+                    {/* Task ID */}
+                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <label className="text-xs font-semibold text-gray-500 uppercase block">Task ID</label>
+                        <div className="mt-1 text-xs text-gray-900 font-mono break-all">
+                            {node.taskId || '-'}
+                        </div>
+                    </div>
+
+                    {/* Task Instance ID */}
+                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <label className="text-xs font-semibold text-gray-500 uppercase block">Task Instance ID</label>
+                        <div className="mt-1 text-xs text-gray-900 font-mono break-all">
+                            {node.taskInstanceId || '-'}
+                        </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <label className="text-xs font-semibold text-gray-500 uppercase block">Status</label>
+                        <div className="mt-2 flex items-center">
+                            <StatusBadge status={node.status} />
+                            <span className="ml-2 text-sm text-gray-700">{node.status}</span>
+                        </div>
+                    </div>
+
+                    {/* Execution Time */}
+                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <label className="text-xs font-semibold text-gray-500 uppercase block">Execution Time</label>
+                        <div className="mt-1 text-sm text-gray-900 font-medium">
+                            {formatExecutionTime(node.executionTimeMs)}
+                        </div>
+                    </div>
+
+                    {/* Node Input */}
+                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <label className="text-xs font-semibold text-gray-500 uppercase block">Node Input</label>
+                        <div className="mt-1 text-xs text-gray-900 font-mono break-all bg-gray-100 p-3 rounded max-h-48 overflow-y-auto">
+                            {node.taskInput ? (
+                                <pre className="whitespace-pre-wrap">
+                                    {JSON.stringify(node.taskInput, null, 2)}
+                                </pre>
+                            ) : '-'}
+                        </div>
+                    </div>
+
+                    {/* Node Output */}
+                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <label className="text-xs font-semibold text-gray-500 uppercase block">Node Output</label>
+                        <div className="mt-1 text-xs text-gray-900 font-mono break-all bg-gray-100 p-3 rounded max-h-48 overflow-y-auto">
+                            {node.taskOutput ? (
+                                <pre className="whitespace-pre-wrap">
+                                    {JSON.stringify(node.taskOutput, null, 2)}
+                                </pre>
+                            ) : '-'}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
     );
 }
 
