@@ -51,7 +51,13 @@ export interface TaskExecutionGraph {
 
 export interface TaskExecutionGraphNode {
     record: TaskStatusRecord
-    children: TaskExecutionGraphNode[] | null
+    next: SubtaskGroupNode | TaskExecutionGraphNode | null
+}
+
+export interface SubtaskGroupNode {
+    groupId: string;
+    nodes: TaskExecutionGraphNode[];
+    next: SubtaskGroupNode | TaskExecutionGraphNode | null;
 }
 
 export interface AgentDefinition {

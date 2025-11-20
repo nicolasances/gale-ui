@@ -51,22 +51,22 @@ export default function ExecutionDetailPage() {
 
         const nodes: Node[] = [];
         const edges: Edge[] = [];
-        let nodeIndex = 0;
 
         // BFS to create hierarchical layout
-        const queue: { node: TaskExecutionGraphNode; level: number; parentId?: string; indexInLevel: number }[] = [];
+        const queue: { node: TaskExecutionGraphNode; level: number; parentId?: string; parentIds?: string[]; indexInLevel: number; leaf: boolean }[] = [];
 
         const levelCounts: Record<number, number> = {};
 
-        queue.push({ node: root, level: 0, indexInLevel: 0 });
+        queue.push({ node: root, level: 0, indexInLevel: 0, leaf: root.next === null });
 
         levelCounts[0] = 1;
 
         while (queue.length > 0) {
 
-            const { node, level, parentId, indexInLevel } = queue.shift()!;
+            const { node, level, parentId, parentIds, indexInLevel, leaf } = queue.shift()!;
 
-            const nodeId = `node-${nodeIndex++}`;
+            console.log(`Node Id: ${node.record.taskInstanceId} - Level: ${level} - ParentId: ${parentId} - ParentIds: ${parentIds ? parentIds.join(',') : 'N/A'}`);
+            
 
             // Calculate position
             const X_STEP = 320;
@@ -75,18 +75,25 @@ export default function ExecutionDetailPage() {
             let x = indexInLevel * X_STEP;
             const y = level * Y_STEP;
 
+            // If the node has multiple parents, center it between them
+            if (parentIds && parentIds.length > 0) {
+                x = (parentIds.length / 2) * X_STEP - (X_STEP / 2);
+            }
             // If the node has children, center it above its children
-            if (node.children && node.children.length > 0) {
-                x = (node.children.length / 2) * X_STEP - (X_STEP / 2);
+            else if (node.next) {
+                // If there are multiple children (as part of a subtask group), center above them
+                if (typeof node.next == 'object' && 'nodes' in node.next && node.next.nodes.length > 0) x = (node.next.nodes.length / 2) * X_STEP - (X_STEP / 2);
+                // If it's a single child, align with it
+                else if (typeof node.next == 'object') x = 0;
             }
 
             nodes.push({
-                id: nodeId,
+                id: node.record.taskInstanceId,
                 type: 'taskNode',
                 position: { x, y },
                 data: {
                     root: level === 0,
-                    leaf: !node.children || node.children.length === 0,
+                    leaf: leaf,
                     agentName: node.record.agentName,
                     taskId: node.record.taskId,
                     status: node.record.status,
@@ -100,9 +107,9 @@ export default function ExecutionDetailPage() {
 
             if (parentId) {
                 edges.push({
-                    id: `edge-${parentId}-${nodeId}`,
+                    id: `edge-${parentId}-${node.record.taskInstanceId}`,
                     source: parentId,
-                    target: nodeId,
+                    target: node.record.taskInstanceId,
                     type: 'customEdge',
                     animated: node.record.status === 'started' || node.record.status === 'waiting',
                     style: { stroke: '#bbc2ceff', strokeWidth: 3 },
@@ -111,29 +118,84 @@ export default function ExecutionDetailPage() {
                         color: '#213963ff',
                     },
                     data: {
-                        input: node.record.taskInput, 
+                        input: node.record.taskInput,
                     }
                 });
             }
+            else if (parentIds) {
 
-            if (node.children && node.children.length > 0) {
+                // Create an edge from each parent to this node
+                parentIds.forEach((pid) => {
+                    edges.push({
+                        id: `edge-${pid}-${node.record.taskInstanceId}`,
+                        source: pid,
+                        target: node.record.taskInstanceId,
+                        type: 'customEdge',
+                        animated: node.record.status === 'started' || node.record.status === 'waiting',
+                        style: { stroke: '#bbc2ceff', strokeWidth: 3 },
+                        markerEnd: {
+                            type: MarkerType.ArrowClosed,
+                            color: '#213963ff',
+                        },
+                        data: {
+                            input: node.record.taskInput,
+                        }
+                    });
+                });
+            }
+
+            if (node.next) {
 
                 const nextLevel = level + 1;
 
                 if (!levelCounts[nextLevel]) levelCounts[nextLevel] = 0;
 
-                node.children.forEach((child, idx) => {
+                // If it's a subtask group, enqueue all its children
+                if (typeof node.next == 'object' && 'nodes' in node.next) {
+                    node.next.nodes.forEach((child, idx) => {
 
-                    queue.push({
-                        node: child,
-                        level: nextLevel,
-                        parentId: nodeId,
-                        indexInLevel: levelCounts[nextLevel] + idx,
+                        queue.push({
+                            node: child,
+                            level: nextLevel,
+                            parentId: node.record.taskInstanceId,
+                            indexInLevel: levelCounts[nextLevel] + idx,
+                            leaf: node.next!.next === null,
+                        });
+
                     });
 
-                });
+                    levelCounts[nextLevel] += node.next.nodes.length;
 
-                levelCounts[nextLevel] += node.children.length;
+                    // If there is a next after the subtask group, enqueue it as well
+                    if (node.next.next && "record" in node.next.next) {
+
+                        if (!levelCounts[nextLevel + 1]) levelCounts[nextLevel + 1] = 0;
+
+                        queue.push({
+                            node: node.next.next,
+                            level: nextLevel + 1,
+                            parentId: undefined,
+                            parentIds: node.next.nodes.map(n => `${n.record.taskInstanceId}`),
+                            indexInLevel: levelCounts[nextLevel + 1],
+                            leaf: node.next.next.next === null,
+                        });
+
+                        levelCounts[nextLevel] += 1;
+                    }
+                }
+                // Otherwise, it's a single child
+                else if (typeof node.next == 'object') {
+                    queue.push({
+                        node: node.next,
+                        level: nextLevel,
+                        parentId: node.record.taskInstanceId,
+                        indexInLevel: levelCounts[nextLevel],
+                        leaf: node.next.next === null,
+                    });
+
+                    levelCounts[nextLevel] += 1;
+                }
+
             }
         }
 
