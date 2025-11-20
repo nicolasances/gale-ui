@@ -255,6 +255,8 @@ export default function ExecutionDetailPage() {
         );
     }, [selectedNode, setNodes]);
 
+    if (!rootNode && loading) return <></>
+
     return (
         <div className="h-screen flex flex-col">
             <div className="flex items-center gap-4 mb-6 pb-0">
@@ -264,8 +266,8 @@ export default function ExecutionDetailPage() {
                     </svg>
                 </button>
                 <div>
-                    <div className="text-xl font-bold">Execution Graph</div>
-                    <p className="text-sm text-gray-500 font-mono mt-1">Correlation ID: {correlationId}</p>
+                    <div className="text-xl font-bold"><span className="text-cyan-400">Flow |</span> {rootNode!.record.agentName}</div>
+                    <p className="text-xs text-gray-500">Started: {new Date(rootNode!.record.startedAt).toLocaleString()}</p>
                 </div>
             </div>
 
