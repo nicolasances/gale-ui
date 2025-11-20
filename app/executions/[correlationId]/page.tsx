@@ -43,6 +43,7 @@ export default function ExecutionDetailPage() {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [selectedNode, setSelectedNode] = useState<any | null>(null);
+    const [isClosing, setIsClosing] = useState(false);
 
     /**
      * Builds the React Flow nodes and edges from the task execution graph.
@@ -257,17 +258,13 @@ export default function ExecutionDetailPage() {
     return (
         <div className="h-screen flex flex-col">
             <div className="flex items-center gap-4 mb-6 p-6 pb-0">
-                <button
-                    onClick={() => router.back()}
-                    className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Back"
-                >
+                <button onClick={() => router.back()} className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" title="Back">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
                 </button>
                 <div>
-                    <h1 className="text-4xl font-bold">Execution Graph</h1>
+                    <div className="text-xl font-bold">Execution Graph</div>
                     <p className="text-sm text-gray-500 font-mono mt-1">Correlation ID: {correlationId}</p>
                 </div>
             </div>
@@ -292,11 +289,20 @@ export default function ExecutionDetailPage() {
                         <Background />
                         <Controls />
                     </ReactFlow>
-                    {selectedNode && (
-                        <NodeDetailPanel 
-                            node={selectedNode} 
-                            onClose={() => setSelectedNode(null)} 
-                        />
+                    {(selectedNode || isClosing) && (
+                        <>
+                            <NodeDetailPanel 
+                                node={selectedNode} 
+                                isClosing={isClosing}
+                                onClose={() => {
+                                    setIsClosing(true);
+                                    setTimeout(() => {
+                                        setSelectedNode(null);
+                                        setIsClosing(false);
+                                    }, 300);
+                                }} 
+                            />
+                        </>
                     )}
                 </div>
             ) : (
@@ -377,7 +383,7 @@ function TaskNodeComponent({ data }: { data: any }) {
                     <div className="flex items-center gap-4">
                         <AgentTypeIcon agentType={data.agentType}/>
                         <div>
-                            <div className="text-base font-semibold text-gray-900 pt-1">{data.agentName || '-'}</div>
+                            <div className="text-lg font-semibold text-gray-900 pt-1">{data.agentName || '-'}</div>
                             {/* <div className="text-sm text-gray-500 font-mono">{formatDuration(data.executionTimeMs)}</div> */}
                         </div>
                         <div>
@@ -394,7 +400,7 @@ function TaskNodeComponent({ data }: { data: any }) {
 /**
  * Side panel displaying detailed information about a selected node
  */
-function NodeDetailPanel({ node, onClose }: { node: any; onClose: () => void }) {
+function NodeDetailPanel({ node, onClose, isClosing }: { node: any; onClose: () => void; isClosing: boolean }) {
     
     const formatExecutionTime = (ms?: number) => {
         if (!ms) return '-';
@@ -403,7 +409,7 @@ function NodeDetailPanel({ node, onClose }: { node: any; onClose: () => void }) 
     };
 
     return (
-        <aside className="fixed top-16 right-0 bottom-0 w-96 bg-white shadow-xl z-40 overflow-y-auto border-l border-gray-200">
+        <aside className={`fixed top-16 right-0 bottom-0 w-96 bg-white shadow-xl z-40 overflow-y-auto border-l border-gray-200 ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
             {/* Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
                 <h2 className="text-base font-semibold text-gray-900">Agent Execution</h2>
