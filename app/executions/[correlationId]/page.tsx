@@ -66,7 +66,7 @@ export default function ExecutionDetailPage() {
             const { node, level, parentId, parentIds, indexInLevel, leaf } = queue.shift()!;
 
             console.log(`Node Id: ${node.record.taskInstanceId} - Level: ${level} - ParentId: ${parentId} - ParentIds: ${parentIds ? parentIds.join(',') : 'N/A'}`);
-            
+
 
             // Calculate position
             const X_STEP = 320;
@@ -100,6 +100,7 @@ export default function ExecutionDetailPage() {
                     stopReason: node.record.stopReason,
                     executionTimeMs: node.record.executionTimeMs,
                     taskOutput: node.record.taskOutput,
+                    resumedAfterSubtasksGroupId: node.record.resumedAfterSubtasksGroupId
                 },
                 sourcePosition: Position.Bottom,
                 targetPosition: Position.Top,
@@ -349,10 +350,12 @@ function TaskNodeComponent({ data }: { data: any }) {
                 </div>
 
                 {/* Task ID */}
-                <div>
-                    <p className="text-xs text-gray-500 mb-1">Task ID</p>
-                    <p className="font-mono text-xs text-blue-600 break-all">{data.taskId}</p>
-                </div>
+                {!data.resumedAfterSubtasksGroupId && (
+                    <div>
+                        <p className="text-xs text-gray-500 mb-1">Task ID</p>
+                        <p className="font-mono text-xs text-blue-600 break-all">{data.taskId}</p>
+                    </div>
+                )}
 
                 {/* Status and Stop Reason */}
                 <div>
