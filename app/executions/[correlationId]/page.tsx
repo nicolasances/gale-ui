@@ -257,7 +257,7 @@ export default function ExecutionDetailPage() {
 
     return (
         <div className="h-screen flex flex-col">
-            <div className="flex items-center gap-4 mb-6 p-6 pb-0">
+            <div className="flex items-center gap-4 mb-6 pb-0">
                 <button onClick={() => router.back()} className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" title="Back">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -274,7 +274,7 @@ export default function ExecutionDetailPage() {
                     <p className="text-gray-500">Loading execution graph...</p>
                 </div>
             ) : rootNode ? (
-                <div className="flex-1" style={{ width: '100%', height: '100%' }}>
+                <div style={{ width: '100%', height: '80%' }}>
                     <ReactFlow
                         nodes={nodes}
                         edges={edges}
@@ -283,7 +283,7 @@ export default function ExecutionDetailPage() {
                         nodeTypes={nodeTypes}
                         edgeTypes={edgeTypes}
                         fitView
-                        fitViewOptions={{ padding: 0.2 }}
+                        // fitViewOptions={{ padding: 0.2 }}
                         proOptions={{ hideAttribution: true }}
                     >
                         <Background />
