@@ -142,7 +142,7 @@ export default function ExecutionDetailPage() {
                         target: node.record.taskInstanceId,
                         type: 'customEdge',
                         animated: node.record.status === 'started' || node.record.status === 'waiting',
-                        style: { stroke: '#bbc2ceff', strokeWidth: 3 },
+                        style: { stroke: '#bbc2ceff', strokeWidth: 5 },
                         markerEnd: {
                             type: MarkerType.ArrowClosed,
                             color: '#213963ff',
@@ -547,7 +547,7 @@ function CustomEdge({ id, source, target, data }: any) {
 
     return (
         <>
-            <BaseEdge id={id} path={path} />
+            <BaseEdge id={id} path={path} style={{strokeWidth: 3, strokeColor: '#e3e3e8ff'}} />
             <EdgeLabelRenderer>
                 <div style={labelStyle} className="relative z-[2000]">
                     <div onClick={handleLabelClick} className="min-h-2 cursor-pointer text-sm font-semibold text-gray-600 bg-cyan-400 rounded-md px-3 py-1 flex items-center hover:shadow-lg hover:scale-150 transition-all" >
