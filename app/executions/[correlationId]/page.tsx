@@ -19,9 +19,11 @@ import ReactFlow, {
     useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import TaskNodeComponent from "./components/TaskNode";
+import { TaskDataPopup } from "./components/TaskData";
+import NodeDetailPanel from "./components/NodeDetailPanel";
 
-const NODE_WIDTH = 360;
-
+export const NODE_WIDTH = 320;
 
 const nodeTypes = {
     taskNode: TaskNodeComponent,
@@ -73,7 +75,7 @@ export default function ExecutionDetailPage() {
 
 
             // Calculate position
-            const X_STEP = NODE_WIDTH;
+            const X_STEP = NODE_WIDTH + 30;
             const Y_STEP = 200;
 
             let x = indexInLevel * X_STEP;
@@ -316,187 +318,6 @@ export default function ExecutionDetailPage() {
     );
 }
 
-/**
- * Label badge for task status
- * @returns 
- */
-function StatusBadge({ status }: { status: TaskStatus }) {
-    const colors = {
-        published: "bg-gray-100 text-gray-800",
-        started: "bg-blue-100 text-blue-800",
-        waiting: "bg-yellow-100 text-yellow-800",
-        completed: "bg-green-300 text-green-800",
-        failed: "bg-red-100 text-red-800",
-        childrenCompleted: "bg-green-300 text-green-800"
-    };
-
-    return (
-        <div className={`flex ${colors[status]} w-8 h-8 justify-center items-center rounded-full`}>
-            {status === 'completed' || status == 'childrenCompleted' ? (
-                <svg className="w-4 h-4 inline" viewBox="0 -3 32 32" fill="currentColor">
-                    <path d="M548.783,1040.2 C547.188,1038.57 544.603,1038.57 543.008,1040.2 L528.569,1054.92 L524.96,1051.24 C523.365,1049.62 520.779,1049.62 519.185,1051.24 C517.59,1052.87 517.59,1055.51 519.185,1057.13 L525.682,1063.76 C527.277,1065.39 529.862,1065.39 531.457,1063.76 L548.783,1046.09 C550.378,1044.46 550.378,1041.82 548.783,1040.2" transform="translate(-518, -1039)" />
-                </svg>
-            ) : null}
-        </div>
-    );
-}
-
-function AgentTypeIcon({ agentType }: { agentType: string }) {
-
-    if (agentType === 'agent') return (
-        <svg className="w-8 h-8 fill-gray-700" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.7530511,13.999921 C18.9956918,13.999921 20.0030511,15.0072804 20.0030511,16.249921 L20.0030511,17.1550008 C20.0030511,18.2486786 19.5255957,19.2878579 18.6957793,20.0002733 C17.1303315,21.344244 14.8899962,22.0010712 12,22.0010712 C9.11050247,22.0010712 6.87168436,21.3444691 5.30881727,20.0007885 C4.48019625,19.2883988 4.00354153,18.2500002 4.00354153,17.1572408 L4.00354153,16.249921 C4.00354153,15.0072804 5.01090084,13.999921 6.25354153,13.999921 L17.7530511,13.999921 Z M11.8985607,2.00734093 L12.0003312,2.00049432 C12.380027,2.00049432 12.6938222,2.2826482 12.7434846,2.64872376 L12.7503312,2.75049432 L12.7495415,3.49949432 L16.25,3.5 C17.4926407,3.5 18.5,4.50735931 18.5,5.75 L18.5,10.254591 C18.5,11.4972317 17.4926407,12.504591 16.25,12.504591 L7.75,12.504591 C6.50735931,12.504591 5.5,11.4972317 5.5,10.254591 L5.5,5.75 C5.5,4.50735931 6.50735931,3.5 7.75,3.5 L11.2495415,3.49949432 L11.2503312,2.75049432 C11.2503312,2.37079855 11.5324851,2.05700336 11.8985607,2.00734093 L12.0003312,2.00049432 L11.8985607,2.00734093 Z M9.74928905,6.5 C9.05932576,6.5 8.5,7.05932576 8.5,7.74928905 C8.5,8.43925235 9.05932576,8.99857811 9.74928905,8.99857811 C10.4392523,8.99857811 10.9985781,8.43925235 10.9985781,7.74928905 C10.9985781,7.05932576 10.4392523,6.5 9.74928905,6.5 Z M14.2420255,6.5 C13.5520622,6.5 12.9927364,7.05932576 12.9927364,7.74928905 C12.9927364,8.43925235 13.5520622,8.99857811 14.2420255,8.99857811 C14.9319888,8.99857811 15.4913145,8.43925235 15.4913145,7.74928905 C15.4913145,7.05932576 14.9319888,6.5 14.2420255,6.5 Z" />
-        </svg>
-    )
-    else return (
-        <svg className="w-8 h-8 fill-gray-700" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
-            <path d="M36.4,3.14a1.62,1.62,0,0,0-2.24-1,1.65,1.65,0,0,0-.59,2.38l7.28,18.18c.45.95,1.28,1.51,2.21,1.06a1.76,1.76,0,0,0,.63-2.47Z"/>
-            <path d="M26.2,15.75c4.11,0,7.41,3.74,7.41,8.37s-3.3,8.37-7.41,8.37-7.41-3.74-7.41-8.37S22.09,15.75,26.2,15.75Z"/>
-            <path d="M9.11,34.34l10.67,1.2L22.24,50h-3a1.87,1.87,0,0,1-1.79-1.39l-2.18-7.84-9.09-1a4.77,4.77,0,0,1-3.88-6.3L7,19.79A2.79,2.79,0,0,1,10.52,18a2.86,2.86,0,0,1,1.73,3.63L8.33,33.09A.94.94,0,0,0,9.11,34.34Z"/>
-            <path d="M33.36,50h-3.2l2.43-14.29,10.09,1.91a.94.94,0,0,0,1.08-1.14l-1.42-6.4a2.85,2.85,0,0,1,2.07-3.44,2.8,2.8,0,0,1,3.38,2.1L49.87,38a4.73,4.73,0,0,1-5.38,5.8l-7.7-1.46-1.62,6.27A1.87,1.87,0,0,1,33.36,50Z"/>
-            <path d="M23.31,37.29a1.1,1.1,0,0,1-1.68-.95V34.57a1.1,1.1,0,0,1,1.68-1l2.89,1.83Z"/>
-            <path d="M26.2,35.45l2.88-1.83a1.1,1.1,0,0,1,1.69,1v1.77a1.11,1.11,0,0,1-1.69.95Z"/>
-        </svg>
-    )
-
-}
-
-/**
- * Displays a task node in the React Flow graph.
- * @returns 
- */
-function TaskNodeComponent({ data }: { data: any }) {
-
-    const handleClick = () => {
-        if (data.onNodeClick) {
-            data.onNodeClick(data);
-        }
-    };
-
-    return (
-        <div 
-            onClick={handleClick}
-            className={`${data.isSelected ? 'bg-blue-50' : 'bg-white'} border-gray-300 border-2 rounded-lg p-3 shadow-md min-w-[280px] w-[${NODE_WIDTH}px] max-w-[${NODE_WIDTH}px] cursor-pointer hover:shadow-lg hover:border-gray-400 transition-all`}
-        >
-            {!data.root && <Handle type="target" position={Position.Top} />}
-            <div className="space-y-3">
-                {/* Agent Name */}
-                <div>
-                    <div className="flex items-center gap-4">
-                        <AgentTypeIcon agentType={data.agentType}/>
-                        <div>
-                            <div className="text-lg font-semibold text-gray-900 pt-1">{data.agentName || '-'}</div>
-                            {/* <div className="text-sm text-gray-500 font-mono">{formatDuration(data.executionTimeMs)}</div> */}
-                        </div>
-                        <div>
-                            <StatusBadge status={data.status} />
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {!data.leaf && <Handle type="source" position={Position.Bottom} />}
-        </div>
-    );
-}
-
-/**
- * Side panel displaying detailed information about a selected node
- */
-function NodeDetailPanel({ node, onClose, isClosing }: { node: any; onClose: () => void; isClosing: boolean }) {
-    
-    const formatExecutionTime = (ms?: number) => {
-        if (!ms) return '-';
-        if (ms < 1000) return `${ms}ms`;
-        return `${(ms / 1000).toFixed(2)}s`;
-    };
-
-    return (
-        <aside className={`fixed top-16 right-0 bottom-0 w-96 bg-white shadow-xl z-40 overflow-y-auto border-l border-gray-200 ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
-            {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-                <h2 className="text-base font-semibold text-gray-900">Agent Execution</h2>
-                <button
-                    onClick={onClose}
-                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                    title="Close"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-4">
-                <div className="space-y-2">
-                    {/* Agent Name */}
-                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <label className="text-xs font-semibold text-gray-500 uppercase block">Agent Name</label>
-                        <div className="mt-1 text-sm text-gray-900 font-medium">{node.agentName || '-'}</div>
-                    </div>
-
-                    {/* Task ID */}
-                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <label className="text-xs font-semibold text-gray-500 uppercase block">Task ID</label>
-                        <div className="mt-1 text-xs text-gray-900 font-mono break-all">
-                            {node.taskId || '-'}
-                        </div>
-                    </div>
-
-                    {/* Task Instance ID */}
-                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <label className="text-xs font-semibold text-gray-500 uppercase block">Task Instance ID</label>
-                        <div className="mt-1 text-xs text-gray-900 font-mono break-all">
-                            {node.taskInstanceId || '-'}
-                        </div>
-                    </div>
-
-                    {/* Status */}
-                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <label className="text-xs font-semibold text-gray-500 uppercase block">Status</label>
-                        <div className="mt-2 flex items-center">
-                            <StatusBadge status={node.status} />
-                            <span className="ml-2 text-sm text-gray-700">{node.status}</span>
-                        </div>
-                    </div>
-
-                    {/* Execution Time */}
-                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <label className="text-xs font-semibold text-gray-500 uppercase block">Execution Time</label>
-                        <div className="mt-1 text-sm text-gray-900 font-medium">
-                            {formatExecutionTime(node.executionTimeMs)}
-                        </div>
-                    </div>
-
-                    {/* Node Input */}
-                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <label className="text-xs font-semibold text-gray-500 uppercase block">Node Input</label>
-                        <div className="mt-1 text-xs text-gray-900 font-mono break-all bg-gray-100 p-3 rounded max-h-48 overflow-y-auto">
-                            {node.taskInput ? (
-                                <pre className="whitespace-pre-wrap">
-                                    {JSON.stringify(node.taskInput, null, 2)}
-                                </pre>
-                            ) : '-'}
-                        </div>
-                    </div>
-
-                    {/* Node Output */}
-                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <label className="text-xs font-semibold text-gray-500 uppercase block">Node Output</label>
-                        <div className="mt-1 text-xs text-gray-900 font-mono break-all bg-gray-100 p-3 rounded max-h-48 overflow-y-auto">
-                            {node.taskOutput ? (
-                                <pre className="whitespace-pre-wrap">
-                                    {JSON.stringify(node.taskOutput, null, 2)}
-                                </pre>
-                            ) : '-'}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </aside>
-    );
-}
-
 function CustomEdge({ id, source, target, data }: any) {
 
     const reactFlow = useReactFlow();
@@ -559,33 +380,4 @@ function CustomEdge({ id, source, target, data }: any) {
             </EdgeLabelRenderer>
         </>
     );
-}
-
-function TaskDataPopup({ handlePopupClick, data, label }: { handlePopupClick: (e: React.MouseEvent) => void, data: any, label: string }) {
-
-    return (
-        <div onClick={handlePopupClick} style={{ transform: 'translate(-50%, 0)', zIndex: 99 }} className="bg-cyan-100 absolute top-8 left-0 rounded-lg shadow-xl p-4 min-w-[300px] max-w-[500px]">
-            <h3 className="text-sm text-gray-400 mb-3 border-b pb-2 border-gray-300">{label}</h3>
-            {typeof data === 'object' && (
-                <div className="space-y-2">
-                    {Object.entries(data).map(([key, value]) => (
-                        <TaskData key={key} label={key} value={value} />
-                    ))}
-                </div>
-            )}
-        </div>
-    )
-}
-
-function TaskData({ label, value }: { label: string, value: any }) {
-
-    return (
-        <div className="flex flex-col">
-            <span className="text-xs font-semibold text-gray-500">{label}</span>
-            <span className="text-sm text-gray-900 font-mono font-bold break-all">
-                {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
-            </span>
-        </div>
-    )
-
 }

@@ -1,0 +1,37 @@
+import { Handle, Position } from "reactflow";
+import AgentTypeIcon from "./AgentTypeIcon";
+import { StatusBadge } from "./StatusBadge";
+import { NODE_WIDTH } from "../page";
+
+/**
+ * Displays a task node in the React Flow graph.
+ * @returns 
+ */
+export default function TaskNodeComponent({ data }: { data: any }) {
+
+    const handleClick = () => {
+        if (data.onNodeClick) {
+            data.onNodeClick(data);
+        }
+    };
+
+    return (
+        <div onClick={handleClick}
+            style={{ width: `${NODE_WIDTH}px`, maxWidth: `${NODE_WIDTH}px` }}
+            className={`${data.isSelected ? 'bg-blue-50' : 'bg-white'} border-gray-300 border-2 rounded-lg p-3 shadow-md cursor-pointer hover:shadow-lg hover:border-gray-400 transition-all`}
+        >
+            {!data.root && <Handle type="target" position={Position.Top} />}
+            <div className="space-y-3">
+                <div className="flex items-center gap-4">
+                    <AgentTypeIcon agentType={data.agentType} />
+                    <div className="text-lg font-semibold text-gray-900 pt-1 flex-1 min-w-0 truncate">{data.agentName || '-'}</div>
+                    {/* <div className="text-sm text-gray-500 font-mono">{formatDuration(data.executionTimeMs)}</div> */}
+                    <div className="flex-shrink-0">
+                        <StatusBadge status={data.status} />
+                    </div>
+                </div>
+            </div>
+            {!data.leaf && <Handle type="source" position={Position.Bottom} />}
+        </div>
+    );
+}
