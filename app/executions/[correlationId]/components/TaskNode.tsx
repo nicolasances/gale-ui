@@ -1,13 +1,13 @@
 import { Handle, Position } from "reactflow";
 import AgentTypeIcon from "./AgentTypeIcon";
 import { StatusBadge } from "./StatusBadge";
-import { NODE_WIDTH } from "../page";
 
+export const NODE_WIDTH = 320;
 /**
  * Displays a task node in the React Flow graph.
  * @returns 
  */
-export default function TaskNodeComponent({ data }: { data: any }) {
+export function TaskNodeComponent({ data }: { data: any }) {
 
     const handleClick = () => {
         if (data.onNodeClick) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { GaleBrokerAPI, TaskExecutionGraphNode, TaskStatus } from "@/api/GaleBrokerAPI";
+import { GaleBrokerAPI, TaskExecutionGraphNode } from "@/api/GaleBrokerAPI";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import ReactFlow, {
@@ -12,18 +12,16 @@ import ReactFlow, {
     useEdgesState,
     MarkerType,
     Position,
-    Handle,
     getBezierPath,
     BaseEdge,
     EdgeLabelRenderer,
     useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import TaskNodeComponent from "./components/TaskNode";
+import { TaskNodeComponent, NODE_WIDTH } from "./components/TaskNode";
 import { TaskDataPopup } from "./components/TaskData";
 import NodeDetailPanel from "./components/NodeDetailPanel";
 
-export const NODE_WIDTH = 320;
 
 const nodeTypes = {
     taskNode: TaskNodeComponent,
@@ -108,7 +106,7 @@ export default function ExecutionDetailPage() {
                     executionTimeMs: node.record.executionTimeMs,
                     taskOutput: node.record.taskOutput,
                     taskInput: node.record.taskInput,
-                    resumedAfterSubtasksGroupId: node.record.resumedAfterSubtasksGroupId, 
+                    resumedAfterSubtasksGroupId: node.record.resumedAfterSubtasksGroupId,
                     agentType: node.record.resumedAfterSubtasksGroupId || !node.record.parentTaskId ? "orchestrator" : "agent",
                     onNodeClick: setSelectedNode,
                     isSelected: false
@@ -295,8 +293,8 @@ export default function ExecutionDetailPage() {
                     </ReactFlow>
                     {(selectedNode || isClosing) && (
                         <>
-                            <NodeDetailPanel 
-                                node={selectedNode} 
+                            <NodeDetailPanel
+                                node={selectedNode}
                                 isClosing={isClosing}
                                 onClose={() => {
                                     setIsClosing(true);
@@ -304,7 +302,7 @@ export default function ExecutionDetailPage() {
                                         setSelectedNode(null);
                                         setIsClosing(false);
                                     }, 300);
-                                }} 
+                                }}
                             />
                         </>
                     )}
@@ -370,7 +368,7 @@ function CustomEdge({ id, source, target, data }: any) {
 
     return (
         <>
-            <BaseEdge id={id} path={path} style={{strokeWidth: 3, strokeColor: '#e3e3e8ff'}} />
+            <BaseEdge id={id} path={path} style={{ strokeWidth: 3, strokeColor: '#e3e3e8ff' }} />
             <EdgeLabelRenderer>
                 <div style={labelStyle} className="relative z-[2000]">
                     <div onClick={handleLabelClick} className="min-h-2 cursor-pointer text-sm font-semibold text-gray-600 bg-cyan-400 rounded-md px-3 py-1 flex items-center hover:shadow-lg hover:scale-150 transition-all" >
