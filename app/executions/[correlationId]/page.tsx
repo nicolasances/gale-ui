@@ -86,14 +86,20 @@ export default function ExecutionDetailPage() {
      * Builds a single node
      * @param node the node data
      */
-    const buildNode = (node: TaskStatusRecord, indexInLevel: number, levelInTree: number, parentsCount: number, childrenCount: number, siblingsCount: number, parentX: number): { node: Node, x: number } => {
+    const buildNode = (node: TaskStatusRecord, indexInLevel: number, levelInTree: number, parentsCount: number, childrenCount: number, siblingsCount: number, parentX: number, parentY: number): { node: Node, x: number, y: number } => {
 
         // Determine the position
         const X_STEP = NODE_WIDTH + NODE_X_GAP;
-        const Y_STEP = 200;
+        const EL_HEIGHT = 120;
+        const ESTIMATED_GROUP_ROW_HEIGHT = 52;
+
+        let prevElementHeight = 0;
+        if (levelInTree > 0) prevElementHeight = parentsCount > 1 ? (Math.floor(parentsCount / 10) + 1) * ESTIMATED_GROUP_ROW_HEIGHT + EL_HEIGHT : EL_HEIGHT;
 
         let x = indexInLevel * X_STEP;
-        const y = levelInTree * Y_STEP;
+        let y = parentY + prevElementHeight;
+
+        console.log(`ParentY: ${parentY} - PrevElementHeight: ${prevElementHeight} => y: ${y}`);
 
         // // X Position
         // // If the node is at level 0, center it above its children
@@ -129,7 +135,7 @@ export default function ExecutionDetailPage() {
                 sourcePosition: Position.Bottom,
                 targetPosition: Position.Top
             },
-            x: x
+            x: x, y: y
         }
 
     }
@@ -138,18 +144,23 @@ export default function ExecutionDetailPage() {
      * Builds a group node
      * @param node the node data
      */
-    const buildGroupNode = (nodes: TaskStatusRecord[], levelInTree: number, parentX: number): { node: Node, x: number } => {
+    const buildGroupNode = (nodes: TaskStatusRecord[], levelInTree: number, parentX: number, parentY: number): { node: Node, x: number, y: number } => {
 
         // Determine the position
-        const Y_STEP = 200;
+        const EL_HEIGHT = 100;
+
+        let prevElementHeight = EL_HEIGHT;
 
         const x = parentX - (GROUP_WIDTH - NODE_WIDTH) / 2;
-        const y = levelInTree * Y_STEP;
+        let y = parentY + prevElementHeight;
+
+        console.log(`ParentY: ${parentY} - PrevElementHeight: ${prevElementHeight} => y: ${y}`);
 
         const nodeData: SubgroupData = {
             groupId: nodes[0].subtaskGroupId!,
             isSelected: false,
-            onNodeClick: setSelectedNode
+            onNodeClick: setSelectedNode,
+            records: nodes,
         }
 
         return {
@@ -161,7 +172,7 @@ export default function ExecutionDetailPage() {
                 sourcePosition: Position.Bottom,
                 targetPosition: Position.Top,
             },
-            x: x
+            x: x, y: y
         }
 
     }
@@ -211,6 +222,7 @@ export default function ExecutionDetailPage() {
 
         // 2. Build each level
         let parentX = 0;
+        let parentY = 0;
         for (let levelIndex = 0; levelIndex < levels.length; levelIndex++) {
 
             const level: TaskStatusRecord[] = levels[levelIndex];
@@ -221,20 +233,22 @@ export default function ExecutionDetailPage() {
 
             if (level.length > 1) {
 
-                const { node: groupNode, x } = buildGroupNode(level, levelIndex, parentX);
+                const { node: groupNode, x, y } = buildGroupNode(level, levelIndex, parentX, parentY);
 
                 levelNodes.push(groupNode);
                 edges.push(...buildIncomingEdges(level[0], levelIndex - 1 >= 0 ? levels[levelIndex - 1] : [], true));
 
                 parentX = x;
+                parentY = y;
             }
             else {
-                const { node: singleNode, x } = buildNode(level[0], 0, levelIndex, levelParentsCount, levelChildrenCount, level.length - 1, parentX);
+                const { node: singleNode, x, y } = buildNode(level[0], 0, levelIndex, levelParentsCount, levelChildrenCount, level.length - 1, parentX, parentY);
 
                 levelNodes.push(singleNode);
                 edges.push(...buildIncomingEdges(level[0], levelIndex - 1 >= 0 ? levels[levelIndex - 1] : [], false));
 
                 parentX = x;
+                parentY = y;
             }
 
             // Store the X of the parent
@@ -287,7 +301,8 @@ export default function ExecutionDetailPage() {
                 ...node,
                 data: {
                     ...node.data,
-                    isSelected: selectedNode?.taskInstanceId === node.id
+                    isSelected: selectedNode?.taskInstanceId === node.id,
+                    selectedTaskInstanceId: selectedNode?.taskInstanceId
                 }
             }))
         );

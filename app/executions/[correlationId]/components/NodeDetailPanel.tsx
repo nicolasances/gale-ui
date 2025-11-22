@@ -1,10 +1,11 @@
+import { TaskStatusRecord } from "@/api/GaleBrokerAPI";
 import { StatusBadge } from "./StatusBadge";
 
 
 /**
  * Side panel displaying detailed information about a selected node
  */
-export default function NodeDetailPanel({ node, onClose, isClosing }: { node: any; onClose: () => void; isClosing: boolean }) {
+export default function NodeDetailPanel({ node, onClose, isClosing }: { node: TaskStatusRecord; onClose: () => void; isClosing: boolean }) {
 
     const formatExecutionTime = (ms?: number) => {
         if (!ms) return '-';
