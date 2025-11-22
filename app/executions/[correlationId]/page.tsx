@@ -1,6 +1,6 @@
 'use client';
 
-import { GaleBrokerAPI, SubtaskGroupNode, TaskExecutionGraphNode, TaskStatus, TaskStatusRecord } from "@/api/GaleBrokerAPI";
+import { GaleBrokerAPI, SubtaskGroupNode, TaskExecutionGraphNode, TaskStatusRecord } from "@/api/GaleBrokerAPI";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import ReactFlow, {
@@ -55,15 +55,14 @@ export default function ExecutionDetailPage() {
     const buildNode = (node: TaskStatusRecord, indexInLevel: number, levelInTree: number, parentsCount: number, parentX: number, parentY: number, isParentGroup: boolean): { node: Node, x: number, y: number } => {
 
         // Determine the position
-        const X_STEP = NODE_WIDTH + NODE_X_GAP;
         const EL_HEIGHT = 120;
         const ESTIMATED_GROUP_ROW_HEIGHT = 50;
 
         let prevElementHeight = 0;
         if (levelInTree > 0) prevElementHeight = parentsCount > 1 ? (Math.floor(parentsCount / AGENTS_PER_ROW) + 1) * ESTIMATED_GROUP_ROW_HEIGHT + EL_HEIGHT : EL_HEIGHT;
 
-        let x = parentX + (isParentGroup ? (GROUP_WIDTH - NODE_WIDTH) / 2 : 0);
-        let y = parentY + prevElementHeight;
+        const x = parentX + (isParentGroup ? (GROUP_WIDTH - NODE_WIDTH) / 2 : 0);
+        const y = parentY + prevElementHeight;
 
         return {
             node: {
@@ -98,10 +97,10 @@ export default function ExecutionDetailPage() {
         // Determine the position
         const EL_HEIGHT = 100;
 
-        let prevElementHeight = EL_HEIGHT;
+        const prevElementHeight = EL_HEIGHT;
 
         const x = parentX - (GROUP_WIDTH - NODE_WIDTH) / 2 + indexInLevel * (GROUP_WIDTH + NODE_X_GAP);
-        let y = parentY + prevElementHeight;
+        const y = parentY + prevElementHeight;
 
         const nodeData: SubgroupData = {
             groupId: nodes[0].subtaskGroupId!,
