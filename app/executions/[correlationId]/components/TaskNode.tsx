@@ -11,7 +11,7 @@ export function TaskNodeComponent({ data }: { data: any }) {
 
     const handleClick = () => {
         if (data.onNodeClick) {
-            data.onNodeClick(data);
+            data.onNodeClick(data.record);
         }
     };
 

@@ -52,7 +52,7 @@ export default function ExecutionDetailPage() {
      * Builds a single node
      * @param node the node data
      */
-    const buildNode = (node: TaskStatusRecord, indexInLevel: number, levelInTree: number, parentsCount: number, parentY: number): { node: Node, x: number, y: number } => {
+    const buildNode = (node: TaskStatusRecord, indexInLevel: number, levelInTree: number, parentsCount: number, parentX: number, parentY: number, isParentGroup: boolean): { node: Node, x: number, y: number } => {
 
         // Determine the position
         const X_STEP = NODE_WIDTH + NODE_X_GAP;
@@ -62,10 +62,8 @@ export default function ExecutionDetailPage() {
         let prevElementHeight = 0;
         if (levelInTree > 0) prevElementHeight = parentsCount > 1 ? (Math.floor(parentsCount / AGENTS_PER_ROW) + 1) * ESTIMATED_GROUP_ROW_HEIGHT + EL_HEIGHT : EL_HEIGHT;
 
-        let x = indexInLevel * X_STEP;
+        let x = parentX + (isParentGroup ? (GROUP_WIDTH - NODE_WIDTH) / 2 : 0);
         let y = parentY + prevElementHeight;
-
-        console.log(`ParentY: ${parentY} - PrevElementHeight: ${prevElementHeight} => y: ${y}`);
 
         return {
             node: {
@@ -104,8 +102,6 @@ export default function ExecutionDetailPage() {
 
         const x = parentX - (GROUP_WIDTH - NODE_WIDTH) / 2 + indexInLevel * (GROUP_WIDTH + NODE_X_GAP);
         let y = parentY + prevElementHeight;
-
-        console.log(`ParentY: ${parentY} - PrevElementHeight: ${prevElementHeight} => y: ${y}`);
 
         const nodeData: SubgroupData = {
             groupId: nodes[0].subtaskGroupId!,
@@ -166,10 +162,12 @@ export default function ExecutionDetailPage() {
 
         if ("record" in currentNode) {
 
-            const builtNode = buildNode(currentNode.record, 0, currentLevel, parents ? parents.length : 0, parentY);
+            const isNodeParentAGroup = currentNode.record.resumedAfterSubtasksGroupId != null && currentNode.record.subtaskGroupId == null && parents != null && parents.length > 1;
+
+            const builtNode = buildNode(currentNode.record, 0, currentLevel, parents ? parents.length : 0, parentX, parentY, isNodeParentAGroup);
 
             nodes.push(builtNode.node);
-            edges.push(...buildIncomingEdges(currentNode.record, parents || [], false) );
+            edges.push(...buildIncomingEdges(currentNode.record, parents || [], false));
 
             const builtSubtree = build(currentNode.next, currentLevel + 1, builtNode.x, builtNode.y, [currentNode.record])
 
@@ -185,7 +183,7 @@ export default function ExecutionDetailPage() {
                 const nodesInGroup = group.nodes.map(n => n.record);
 
                 let groupNode;
-                if (nodesInGroup.length == 1) groupNode = buildNode(nodesInGroup[0], groupIndex, currentLevel, parents ? parents.length : 0, parentY);
+                if (nodesInGroup.length == 1) groupNode = buildNode(nodesInGroup[0], groupIndex, currentLevel, parents ? parents.length : 0, parentX, parentY, false);
                 else groupNode = buildGroupNode(nodesInGroup, parentX, parentY, groupIndex);
 
                 nodes.push(groupNode.node);
