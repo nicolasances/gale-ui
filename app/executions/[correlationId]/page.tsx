@@ -1,6 +1,6 @@
 'use client';
 
-import { GaleBrokerAPI, TaskExecutionGraphNode } from "@/api/GaleBrokerAPI";
+import { GaleBrokerAPI, SubtaskGroupNode, TaskExecutionGraphNode, TaskStatus, TaskStatusRecord } from "@/api/GaleBrokerAPI";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import ReactFlow, {
@@ -21,10 +21,13 @@ import 'reactflow/dist/style.css';
 import { TaskNodeComponent, NODE_WIDTH } from "./components/TaskNode";
 import { TaskDataPopup } from "./components/TaskData";
 import NodeDetailPanel from "./components/NodeDetailPanel";
+import { GROUP_WIDTH, SubgroupData, SubgroupTasksNodeComponent } from "./components/SubgroupTasksNode";
 
+const NODE_X_GAP = 30;
 
 const nodeTypes = {
     taskNode: TaskNodeComponent,
+    groupNode: SubgroupTasksNodeComponent,
 };
 
 const edgeTypes = {
@@ -46,171 +49,206 @@ export default function ExecutionDetailPage() {
     const [isClosing, setIsClosing] = useState(false);
 
     /**
-     * Builds the React Flow nodes and edges from the task execution graph.
+     * Extracts levels from the task execution tree. 
+     * Each level is a list of nodes at that depth.
      * 
-     * @param root the root node of the task execution graph
-     * @returns the list of React Flow nodes and edges
+     * @param root the root of the tree
      */
-    const buildFlowGraph = useCallback((root: TaskExecutionGraphNode) => {
+    const extractLevelsFromTree = (root: TaskExecutionGraphNode | SubtaskGroupNode | null): TaskStatusRecord[][] => {
 
-        const nodes: Node[] = [];
-        const edges: Edge[] = [];
+        const levels: TaskStatusRecord[][] = [];
 
-        // BFS to create hierarchical layout
-        const queue: { node: TaskExecutionGraphNode; level: number; parentId?: string; parentIds?: string[]; indexInLevel: number; leaf: boolean }[] = [];
+        let currentNode = root;
 
-        const levelCounts: Record<number, number> = {};
+        if (!currentNode) return levels;
 
-        queue.push({ node: root, level: 0, indexInLevel: 0, leaf: root.next === null });
+        while (currentNode != null) {
 
-        levelCounts[0] = 1;
+            let levelNodes: TaskStatusRecord[] = []
 
-        while (queue.length > 0) {
-
-            const { node, level, parentId, parentIds, indexInLevel, leaf } = queue.shift()!;
-
-            console.log(`Node Id: ${node.record.taskInstanceId} - Level: ${level} - ParentId: ${parentId} - ParentIds: ${parentIds ? parentIds.join(',') : 'N/A'}`);
-
-
-            // Calculate position
-            const X_STEP = NODE_WIDTH + 30;
-            const Y_STEP = 200;
-
-            let x = indexInLevel * X_STEP;
-            const y = level * Y_STEP;
-
-            // If the node has multiple parents, center it between them
-            if (parentIds && parentIds.length > 0) {
-                x = (parentIds.length / 2) * X_STEP - (X_STEP / 2);
-            }
-            // If the node has children, center it above its children
-            else if (node.next) {
-                // If there are multiple children (as part of a subtask group), center above them
-                if (typeof node.next == 'object' && 'nodes' in node.next && node.next.nodes.length > 0) x = (node.next.nodes.length / 2) * X_STEP - (X_STEP / 2);
-                // If it's a single child, align with it
-                else if (typeof node.next == 'object') x = 0;
+            // 1. Extract all nodes at this level
+            if ("record" in currentNode) levelNodes.push(currentNode.record);
+            else if ('nodes' in currentNode) {
+                levelNodes = (currentNode as SubtaskGroupNode).nodes.map((n: TaskExecutionGraphNode) => n.record);
             }
 
-            nodes.push({
-                id: node.record.taskInstanceId,
+            // 2. Add the level nodes to the levels array
+            levels.push(levelNodes);
+
+            // 3. Move to the next level
+            currentNode = currentNode.next;
+        }
+
+        return levels
+    }
+
+    /**
+     * Builds a single node
+     * @param node the node data
+     */
+    const buildNode = (node: TaskStatusRecord, indexInLevel: number, levelInTree: number, parentsCount: number, childrenCount: number, siblingsCount: number, parentX: number): { node: Node, x: number } => {
+
+        // Determine the position
+        const X_STEP = NODE_WIDTH + NODE_X_GAP;
+        const Y_STEP = 200;
+
+        let x = indexInLevel * X_STEP;
+        const y = levelInTree * Y_STEP;
+
+        // // X Position
+        // // If the node is at level 0, center it above its children
+        // if (levelInTree === 0 && childrenCount > 0) x = (childrenCount / 2) * X_STEP - (X_STEP / 2);
+        // // If the node is at the last level, center it below its parents
+        // else if (childrenCount === 0 && parentsCount > 1) x = (parentsCount / 2) * X_STEP - (X_STEP / 2);
+        // // If the node is a single child and has multiple parents, center it between its parents
+        // else if (parentsCount > 1 && siblingsCount === 0) x = (parentsCount / 2) * X_STEP - (X_STEP / 2);
+        // // If the node is a single child and has a single parent, align with the parent
+        // else if (parentsCount === 1 && siblingsCount === 0) x = parentX;
+
+        return {
+            node: {
+                id: node.taskInstanceId,
                 type: 'taskNode',
                 position: { x, y },
                 data: {
-                    root: level === 0,
-                    leaf: leaf,
-                    agentName: node.record.agentName,
-                    taskId: node.record.taskId,
-                    taskInstanceId: node.record.taskInstanceId,
-                    status: node.record.status,
-                    stopReason: node.record.stopReason,
-                    executionTimeMs: node.record.executionTimeMs,
-                    taskOutput: node.record.taskOutput,
-                    taskInput: node.record.taskInput,
-                    resumedAfterSubtasksGroupId: node.record.resumedAfterSubtasksGroupId,
-                    agentType: node.record.resumedAfterSubtasksGroupId || !node.record.parentTaskId ? "orchestrator" : "agent",
+                    root: levelInTree === 0,
+                    leaf: false,
+                    agentName: node.agentName,
+                    taskId: node.taskId,
+                    taskInstanceId: node.taskInstanceId,
+                    status: node.status,
+                    stopReason: node.stopReason,
+                    executionTimeMs: node.executionTimeMs,
+                    taskOutput: node.taskOutput,
+                    taskInput: node.taskInput,
+                    resumedAfterSubtasksGroupId: node.resumedAfterSubtasksGroupId,
+                    agentType: node.resumedAfterSubtasksGroupId || !node.parentTaskId ? "orchestrator" : "agent",
                     onNodeClick: setSelectedNode,
                     isSelected: false
                 },
                 sourcePosition: Position.Bottom,
+                targetPosition: Position.Top
+            },
+            x: x
+        }
+
+    }
+
+    /**
+     * Builds a group node
+     * @param node the node data
+     */
+    const buildGroupNode = (nodes: TaskStatusRecord[], levelInTree: number, parentX: number): { node: Node, x: number } => {
+
+        // Determine the position
+        const Y_STEP = 200;
+
+        const x = parentX - (GROUP_WIDTH - NODE_WIDTH) / 2;
+        const y = levelInTree * Y_STEP;
+
+        const nodeData: SubgroupData = {
+            groupId: nodes[0].subtaskGroupId!,
+            isSelected: false,
+            onNodeClick: setSelectedNode
+        }
+
+        return {
+            node: {
+                id: nodes[0].subtaskGroupId!,
+                type: 'groupNode',
+                position: { x, y },
+                data: nodeData,
+                sourcePosition: Position.Bottom,
                 targetPosition: Position.Top,
-            });
+            },
+            x: x
+        }
 
-            if (parentId) {
-                edges.push({
-                    id: `edge-${parentId}-${node.record.taskInstanceId}`,
-                    source: parentId,
-                    target: node.record.taskInstanceId,
-                    type: 'customEdge',
-                    animated: node.record.status === 'started' || node.record.status === 'waiting',
-                    style: { stroke: '#bbc2ceff', strokeWidth: 3 },
-                    markerEnd: {
-                        type: MarkerType.ArrowClosed,
-                        color: '#213963ff',
-                    },
-                    data: {
-                        input: node.record.taskInput,
-                    }
-                });
-            }
-            else if (parentIds) {
+    }
 
-                // Create an edge from each parent to this node
-                parentIds.forEach((pid) => {
-                    edges.push({
-                        id: `edge-${pid}-${node.record.taskInstanceId}`,
-                        source: pid,
-                        target: node.record.taskInstanceId,
-                        type: 'customEdge',
-                        animated: node.record.status === 'started' || node.record.status === 'waiting',
-                        style: { stroke: '#bbc2ceff', strokeWidth: 5 },
-                        markerEnd: {
-                            type: MarkerType.ArrowClosed,
-                            color: '#213963ff',
-                        },
-                        data: {
-                            input: node.record.taskInput,
-                        }
-                    });
-                });
-            }
+    const buildIncomingEdges = (node: TaskStatusRecord, previousLayer: TaskStatusRecord[], isGroup: boolean): Edge[] => {
 
-            if (node.next) {
+        if (!previousLayer || previousLayer.length === 0) return [];
 
-                const nextLevel = level + 1;
+        const edges: Edge[] = [];
 
-                if (!levelCounts[nextLevel]) levelCounts[nextLevel] = 0;
+        const parentId = previousLayer.length > 1 ? previousLayer[0].subtaskGroupId! : previousLayer[0].taskInstanceId;
+        const nodeId = isGroup ? node.subtaskGroupId! : node.taskInstanceId;
 
-                // If it's a subtask group, enqueue all its children
-                if (typeof node.next == 'object' && 'nodes' in node.next) {
-                    node.next.nodes.forEach((child, idx) => {
-
-                        queue.push({
-                            node: child,
-                            level: nextLevel,
-                            parentId: node.record.taskInstanceId,
-                            indexInLevel: levelCounts[nextLevel] + idx,
-                            leaf: node.next!.next === null,
-                        });
-
-                    });
-
-                    levelCounts[nextLevel] += node.next.nodes.length;
-
-                    // If there is a next after the subtask group, enqueue it as well
-                    if (node.next.next && "record" in node.next.next) {
-
-                        if (!levelCounts[nextLevel + 1]) levelCounts[nextLevel + 1] = 0;
-
-                        queue.push({
-                            node: node.next.next,
-                            level: nextLevel + 1,
-                            parentId: undefined,
-                            parentIds: node.next.nodes.map(n => `${n.record.taskInstanceId}`),
-                            indexInLevel: levelCounts[nextLevel + 1],
-                            leaf: node.next.next.next === null,
-                        });
-
-                        levelCounts[nextLevel] += 1;
-                    }
-                }
-                // Otherwise, it's a single child
-                else if (typeof node.next == 'object') {
-                    queue.push({
-                        node: node.next,
-                        level: nextLevel,
-                        parentId: node.record.taskInstanceId,
-                        indexInLevel: levelCounts[nextLevel],
-                        leaf: node.next.next === null,
-                    });
-
-                    levelCounts[nextLevel] += 1;
-                }
-
+        const edge = {
+            id: `edge-${parentId}-${nodeId}`,
+            source: parentId,
+            target: nodeId,
+            type: 'customEdge',
+            animated: node.status === 'started' || node.status === 'waiting',
+            markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: '#213963ff',
+            },
+            data: {
+                input: node.taskInput,
             }
         }
 
+        edges.push(edge);
+
+        return edges;
+    }
+
+    /**
+     * Builds the React Flow nodes and edges from the execution graph.
+     * This method builds the nodes level by level.
+     * 
+     * @param root the root of the execution graph
+     */
+    const buildFlow = useCallback((root: TaskExecutionGraphNode) => {
+
+        const nodes: Node[] = [];
+        const edges: Edge[] = [];
+
+        // 1. Extract the levels
+        const levels: TaskStatusRecord[][] = extractLevelsFromTree(root);
+
+        // 2. Build each level
+        let parentX = 0;
+        for (let levelIndex = 0; levelIndex < levels.length; levelIndex++) {
+
+            const level: TaskStatusRecord[] = levels[levelIndex];
+            const levelChildrenCount = levelIndex + 1 < levels.length ? levels[levelIndex + 1].length : 0;
+            const levelParentsCount = levelIndex - 1 >= 0 ? levels[levelIndex - 1].length : 0;
+
+            const levelNodes: Node[] = [];
+
+            if (level.length > 1) {
+
+                const { node: groupNode, x } = buildGroupNode(level, levelIndex, parentX);
+
+                levelNodes.push(groupNode);
+                edges.push(...buildIncomingEdges(level[0], levelIndex - 1 >= 0 ? levels[levelIndex - 1] : [], true));
+
+                parentX = x;
+            }
+            else {
+                const { node: singleNode, x } = buildNode(level[0], 0, levelIndex, levelParentsCount, levelChildrenCount, level.length - 1, parentX);
+
+                levelNodes.push(singleNode);
+                edges.push(...buildIncomingEdges(level[0], levelIndex - 1 >= 0 ? levels[levelIndex - 1] : [], false));
+
+                parentX = x;
+            }
+
+            // Store the X of the parent
+            if (level.length == 1) parentX = levelNodes[0].position.x;
+            else if (level.length > 1) parentX = (levelNodes.length / 2) * (NODE_WIDTH + NODE_X_GAP) - ((NODE_WIDTH + NODE_X_GAP) / 2);
+
+            // Push all the nodes of this level
+            nodes.push(...levelNodes);
+        }
+
         return { nodes, edges };
+
     }, []);
+
 
     /**
      * Loads the execution graph for the given correlation ID.
@@ -225,7 +263,7 @@ export default function ExecutionDetailPage() {
 
             setRootNode(response.graph.rootNode);
 
-            const { nodes: flowNodes, edges: flowEdges } = buildFlowGraph(response.graph.rootNode);
+            const { nodes: flowNodes, edges: flowEdges } = buildFlow(response.graph.rootNode);
 
             setNodes(flowNodes);
             setEdges(flowEdges);
@@ -238,7 +276,7 @@ export default function ExecutionDetailPage() {
             setLoading(false);
         }
 
-    }, [correlationId, buildFlowGraph, setNodes, setEdges]);
+    }, [correlationId, buildFlow, setNodes, setEdges]);
 
     useEffect(() => { loadGraph(); }, [loadGraph]);
 
