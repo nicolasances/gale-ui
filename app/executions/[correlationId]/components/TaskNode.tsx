@@ -24,10 +24,9 @@ export function TaskNodeComponent({ data }: { data: any }) {
             <div className="space-y-3">
                 <div className="flex items-center gap-4">
                     <AgentTypeIcon agentType={data.agentType} />
-                    <div className="text-lg font-semibold text-gray-900 pt-1 flex-1 min-w-0 truncate">{data.agentName || '-'}</div>
-                    {/* <div className="text-sm text-gray-500 font-mono">{formatDuration(data.executionTimeMs)}</div> */}
+                    <div className="text-lg font-semibold text-gray-900 pt-1 flex-1 min-w-0 truncate">{data.record.agentName || '-'}</div>
                     <div className="flex-shrink-0">
-                        <StatusBadge status={data.status} />
+                        <StatusBadge status={data.record.status} />
                     </div>
                 </div>
             </div>

@@ -3,7 +3,8 @@ import AgentTypeIcon from "./AgentTypeIcon";
 import { TaskStatusRecord } from "@/api/GaleBrokerAPI";
 import { StatusBadge } from "./StatusBadge";
 
-export const GROUP_WIDTH = 640;
+export const GROUP_WIDTH = 500;
+export const AGENTS_PER_ROW = 8;
 /**
  * Displays a subgroup nodein the React Flow graph.
  * @returns 

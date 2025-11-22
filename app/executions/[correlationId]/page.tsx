@@ -21,7 +21,7 @@ import 'reactflow/dist/style.css';
 import { TaskNodeComponent, NODE_WIDTH } from "./components/TaskNode";
 import { TaskDataPopup } from "./components/TaskData";
 import NodeDetailPanel from "./components/NodeDetailPanel";
-import { GROUP_WIDTH, SubgroupData, SubgroupTasksNodeComponent } from "./components/SubgroupTasksNode";
+import { AGENTS_PER_ROW, GROUP_WIDTH, SubgroupData, SubgroupTasksNodeComponent } from "./components/SubgroupTasksNode";
 
 const NODE_X_GAP = 30;
 
@@ -49,67 +49,23 @@ export default function ExecutionDetailPage() {
     const [isClosing, setIsClosing] = useState(false);
 
     /**
-     * Extracts levels from the task execution tree. 
-     * Each level is a list of nodes at that depth.
-     * 
-     * @param root the root of the tree
-     */
-    const extractLevelsFromTree = (root: TaskExecutionGraphNode | SubtaskGroupNode | null): TaskStatusRecord[][] => {
-
-        const levels: TaskStatusRecord[][] = [];
-
-        let currentNode = root;
-
-        if (!currentNode) return levels;
-
-        while (currentNode != null) {
-
-            let levelNodes: TaskStatusRecord[] = []
-
-            // 1. Extract all nodes at this level
-            if ("record" in currentNode) levelNodes.push(currentNode.record);
-            else if ('nodes' in currentNode) {
-                levelNodes = (currentNode as SubtaskGroupNode).nodes.map((n: TaskExecutionGraphNode) => n.record);
-            }
-
-            // 2. Add the level nodes to the levels array
-            levels.push(levelNodes);
-
-            // 3. Move to the next level
-            currentNode = currentNode.next;
-        }
-
-        return levels
-    }
-
-    /**
      * Builds a single node
      * @param node the node data
      */
-    const buildNode = (node: TaskStatusRecord, indexInLevel: number, levelInTree: number, parentsCount: number, childrenCount: number, siblingsCount: number, parentX: number, parentY: number): { node: Node, x: number, y: number } => {
+    const buildNode = (node: TaskStatusRecord, indexInLevel: number, levelInTree: number, parentsCount: number, parentY: number): { node: Node, x: number, y: number } => {
 
         // Determine the position
         const X_STEP = NODE_WIDTH + NODE_X_GAP;
         const EL_HEIGHT = 120;
-        const ESTIMATED_GROUP_ROW_HEIGHT = 52;
+        const ESTIMATED_GROUP_ROW_HEIGHT = 50;
 
         let prevElementHeight = 0;
-        if (levelInTree > 0) prevElementHeight = parentsCount > 1 ? (Math.floor(parentsCount / 10) + 1) * ESTIMATED_GROUP_ROW_HEIGHT + EL_HEIGHT : EL_HEIGHT;
+        if (levelInTree > 0) prevElementHeight = parentsCount > 1 ? (Math.floor(parentsCount / AGENTS_PER_ROW) + 1) * ESTIMATED_GROUP_ROW_HEIGHT + EL_HEIGHT : EL_HEIGHT;
 
         let x = indexInLevel * X_STEP;
         let y = parentY + prevElementHeight;
 
         console.log(`ParentY: ${parentY} - PrevElementHeight: ${prevElementHeight} => y: ${y}`);
-
-        // // X Position
-        // // If the node is at level 0, center it above its children
-        // if (levelInTree === 0 && childrenCount > 0) x = (childrenCount / 2) * X_STEP - (X_STEP / 2);
-        // // If the node is at the last level, center it below its parents
-        // else if (childrenCount === 0 && parentsCount > 1) x = (parentsCount / 2) * X_STEP - (X_STEP / 2);
-        // // If the node is a single child and has multiple parents, center it between its parents
-        // else if (parentsCount > 1 && siblingsCount === 0) x = (parentsCount / 2) * X_STEP - (X_STEP / 2);
-        // // If the node is a single child and has a single parent, align with the parent
-        // else if (parentsCount === 1 && siblingsCount === 0) x = parentX;
 
         return {
             node: {
@@ -119,15 +75,7 @@ export default function ExecutionDetailPage() {
                 data: {
                     root: levelInTree === 0,
                     leaf: false,
-                    agentName: node.agentName,
-                    taskId: node.taskId,
-                    taskInstanceId: node.taskInstanceId,
-                    status: node.status,
-                    stopReason: node.stopReason,
-                    executionTimeMs: node.executionTimeMs,
-                    taskOutput: node.taskOutput,
-                    taskInput: node.taskInput,
-                    resumedAfterSubtasksGroupId: node.resumedAfterSubtasksGroupId,
+                    record: node,
                     agentType: node.resumedAfterSubtasksGroupId || !node.parentTaskId ? "orchestrator" : "agent",
                     onNodeClick: setSelectedNode,
                     isSelected: false
@@ -143,15 +91,18 @@ export default function ExecutionDetailPage() {
     /**
      * Builds a group node
      * @param node the node data
+     * @param parentX the parent's X position
+     * @param parentY the parent's Y position
+     * @param indexInLevel the index in the current level. It allows to space out sibling groups.
      */
-    const buildGroupNode = (nodes: TaskStatusRecord[], levelInTree: number, parentX: number, parentY: number): { node: Node, x: number, y: number } => {
+    const buildGroupNode = (nodes: TaskStatusRecord[], parentX: number, parentY: number, indexInLevel: number): { node: Node, x: number, y: number } => {
 
         // Determine the position
         const EL_HEIGHT = 100;
 
         let prevElementHeight = EL_HEIGHT;
 
-        const x = parentX - (GROUP_WIDTH - NODE_WIDTH) / 2;
+        const x = parentX - (GROUP_WIDTH - NODE_WIDTH) / 2 + indexInLevel * (GROUP_WIDTH + NODE_X_GAP);
         let y = parentY + prevElementHeight;
 
         console.log(`ParentY: ${parentY} - PrevElementHeight: ${prevElementHeight} => y: ${y}`);
@@ -206,6 +157,52 @@ export default function ExecutionDetailPage() {
         return edges;
     }
 
+    const build = (currentNode: TaskExecutionGraphNode | SubtaskGroupNode[] | null, currentLevel: number, parentX: number, parentY: number, parents: TaskStatusRecord[] | null): { nodes: Node[], edges: Edge[] } => {
+
+        if (currentNode == null) return { nodes: [], edges: [] };
+
+        const nodes: Node[] = [];
+        const edges: Edge[] = [];
+
+        if ("record" in currentNode) {
+
+            const builtNode = buildNode(currentNode.record, 0, currentLevel, parents ? parents.length : 0, parentY);
+
+            nodes.push(builtNode.node);
+            edges.push(...buildIncomingEdges(currentNode.record, parents || [], false) );
+
+            const builtSubtree = build(currentNode.next, currentLevel + 1, builtNode.x, builtNode.y, [currentNode.record])
+
+            nodes.push(...builtSubtree.nodes);
+            edges.push(...builtSubtree.edges);
+        }
+        // Otherwise it's a list of groups
+        else {
+
+            for (let groupIndex = 0; groupIndex < currentNode.length; groupIndex++) {
+
+                const group = currentNode[groupIndex];
+                const nodesInGroup = group.nodes.map(n => n.record);
+
+                let groupNode;
+                if (nodesInGroup.length == 1) groupNode = buildNode(nodesInGroup[0], groupIndex, currentLevel, parents ? parents.length : 0, parentY);
+                else groupNode = buildGroupNode(nodesInGroup, parentX, parentY, groupIndex);
+
+                nodes.push(groupNode.node);
+                edges.push(...buildIncomingEdges(group.nodes[0].record, parents || [], nodesInGroup.length > 1));
+
+                const builtSubtree = build(group.next, currentLevel + 1, groupNode.x, groupNode.y, nodesInGroup)
+
+                nodes.push(...builtSubtree.nodes);
+                edges.push(...builtSubtree.edges);
+            }
+
+        }
+
+        return { nodes, edges };
+
+    }
+
     /**
      * Builds the React Flow nodes and edges from the execution graph.
      * This method builds the nodes level by level.
@@ -214,52 +211,7 @@ export default function ExecutionDetailPage() {
      */
     const buildFlow = useCallback((root: TaskExecutionGraphNode) => {
 
-        const nodes: Node[] = [];
-        const edges: Edge[] = [];
-
-        // 1. Extract the levels
-        const levels: TaskStatusRecord[][] = extractLevelsFromTree(root);
-
-        // 2. Build each level
-        let parentX = 0;
-        let parentY = 0;
-        for (let levelIndex = 0; levelIndex < levels.length; levelIndex++) {
-
-            const level: TaskStatusRecord[] = levels[levelIndex];
-            const levelChildrenCount = levelIndex + 1 < levels.length ? levels[levelIndex + 1].length : 0;
-            const levelParentsCount = levelIndex - 1 >= 0 ? levels[levelIndex - 1].length : 0;
-
-            const levelNodes: Node[] = [];
-
-            if (level.length > 1) {
-
-                const { node: groupNode, x, y } = buildGroupNode(level, levelIndex, parentX, parentY);
-
-                levelNodes.push(groupNode);
-                edges.push(...buildIncomingEdges(level[0], levelIndex - 1 >= 0 ? levels[levelIndex - 1] : [], true));
-
-                parentX = x;
-                parentY = y;
-            }
-            else {
-                const { node: singleNode, x, y } = buildNode(level[0], 0, levelIndex, levelParentsCount, levelChildrenCount, level.length - 1, parentX, parentY);
-
-                levelNodes.push(singleNode);
-                edges.push(...buildIncomingEdges(level[0], levelIndex - 1 >= 0 ? levels[levelIndex - 1] : [], false));
-
-                parentX = x;
-                parentY = y;
-            }
-
-            // Store the X of the parent
-            if (level.length == 1) parentX = levelNodes[0].position.x;
-            else if (level.length > 1) parentX = (levelNodes.length / 2) * (NODE_WIDTH + NODE_X_GAP) - ((NODE_WIDTH + NODE_X_GAP) / 2);
-
-            // Push all the nodes of this level
-            nodes.push(...levelNodes);
-        }
-
-        return { nodes, edges };
+        return build(root, 0, 0, 0, null);
 
     }, []);
 
