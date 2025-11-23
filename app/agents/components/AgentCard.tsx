@@ -1,7 +1,6 @@
 'use client';
 
 import { AgentDefinition } from "@/api/GaleBrokerAPI";
-import { useState } from "react";
 
 export function AgentCard({ agent }: { agent: AgentDefinition }) {
 
