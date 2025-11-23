@@ -12,6 +12,15 @@ export class GaleBrokerAPI {
     }
 
     /**
+     * Get a specific agent by task ID.
+     * @param taskId The task ID of the agent to retrieve.
+     * @returns A promise that resolves to the agent definition.
+     */
+    async getAgent(taskId: string): Promise<GetAgentResponse> {
+        return (await new TotoAPI().fetch('gale-broker', `/catalog/agents/${taskId}`)).json()
+    }
+
+    /**
      * Gets the list of root tasks (tasks without a parent).
      * 
      * @returns the list of root tasks
@@ -35,6 +44,10 @@ export class GaleBrokerAPI {
 
 interface GetAgentsResponse {
     agents: AgentDefinition[];
+}
+
+interface GetAgentResponse {
+    agent: AgentDefinition;
 }
 
 interface GetRootTasksResponse {
@@ -66,7 +79,13 @@ export interface AgentDefinition {
     taskId: string; // The unique identifier of the type of task this Agent can execute.
     inputSchema: any; 
     outputSchema: any; 
-    endpoint: string;
+    endpoint: AgentEndpoint;
+}
+
+export interface AgentEndpoint {
+    baseURL: string;
+    executionPath: string;
+    infoPath: string;
 }
 
 export interface TaskStatusRecord {

@@ -1,11 +1,17 @@
 'use client';
 
 import { AgentDefinition } from "@/api/GaleBrokerAPI";
+import { useRouter } from "next/navigation";
 
 export function AgentCard({ agent }: { agent: AgentDefinition }) {
 
+    const router = useRouter();
+
     return (
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer" >
+        <div 
+            className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
+            onClick={() => router.push(`/agents/${encodeURIComponent(agent.taskId)}`)}
+        >
 
             <div className="flex items-start justify-between mb-3">
                 <div>
