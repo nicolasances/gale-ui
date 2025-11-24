@@ -1,11 +1,14 @@
 import { TaskStatusRecord } from "@/api/GaleBrokerAPI";
 import { StatusBadge } from "./StatusBadge";
+import { useState } from "react";
+import ExpandedViewPopup from "./ExpandedViewPopup";
 
 
 /**
  * Side panel displaying detailed information about a selected node
  */
 export default function NodeDetailPanel({ node, onClose, isClosing }: { node: TaskStatusRecord; onClose: () => void; isClosing: boolean }) {
+    const [expandedView, setExpandedView] = useState<{ title: string; data: any } | null>(null);
 
     const formatExecutionTime = (ms?: number) => {
         if (!ms) return '-';
@@ -73,7 +76,18 @@ export default function NodeDetailPanel({ node, onClose, isClosing }: { node: Ta
 
                     {/* Node Input */}
                     <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <label className="text-xs font-semibold text-gray-500 uppercase block">Node Input</label>
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-semibold text-gray-500 uppercase">Node Input</label>
+                            <button
+                                onClick={() => setExpandedView({ title: 'Node Input', data: node.taskInput })}
+                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                                title="Expand view"
+                            >
+                                <svg fill="currentColor" width="16px" height="16px" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M0 16q0.064 0.128 0.16 0.352t0.48 0.928 0.832 1.344 1.248 1.536 1.664 1.696 2.144 1.568 2.624 1.344 3.136 0.896 3.712 0.352 3.712-0.352 3.168-0.928 2.592-1.312 2.144-1.6 1.664-1.632 1.248-1.6 0.832-1.312 0.48-0.928l0.16-0.352q-0.032-0.128-0.16-0.352t-0.48-0.896-0.832-1.344-1.248-1.568-1.664-1.664-2.144-1.568-2.624-1.344-3.136-0.896-3.712-0.352-3.712 0.352-3.168 0.896-2.592 1.344-2.144 1.568-1.664 1.664-1.248 1.568-0.832 1.344-0.48 0.928zM10.016 16q0-2.464 1.728-4.224t4.256-1.76 4.256 1.76 1.76 4.224-1.76 4.256-4.256 1.76-4.256-1.76-1.728-4.256zM12 16q0 1.664 1.184 2.848t2.816 1.152 2.816-1.152 1.184-2.848-1.184-2.816-2.816-1.184-2.816 1.184l2.816 2.816h-4z"></path>
+                                </svg>
+                            </button>
+                        </div>
                         <div className="mt-1 text-xs text-gray-900 font-mono break-all bg-gray-100 p-3 rounded max-h-48 overflow-y-auto">
                             {node.taskInput ? (
                                 <pre className="whitespace-pre-wrap">
@@ -85,7 +99,18 @@ export default function NodeDetailPanel({ node, onClose, isClosing }: { node: Ta
 
                     {/* Node Output */}
                     <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <label className="text-xs font-semibold text-gray-500 uppercase block">Node Output</label>
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-semibold text-gray-500 uppercase">Node Output</label>
+                            <button
+                                onClick={() => setExpandedView({ title: 'Node Output', data: node.taskOutput })}
+                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                                title="Expand view"
+                            >
+                                <svg fill="currentColor" width="16px" height="16px" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M0 16q0.064 0.128 0.16 0.352t0.48 0.928 0.832 1.344 1.248 1.536 1.664 1.696 2.144 1.568 2.624 1.344 3.136 0.896 3.712 0.352 3.712-0.352 3.168-0.928 2.592-1.312 2.144-1.6 1.664-1.632 1.248-1.6 0.832-1.312 0.48-0.928l0.16-0.352q-0.032-0.128-0.16-0.352t-0.48-0.896-0.832-1.344-1.248-1.568-1.664-1.664-2.144-1.568-2.624-1.344-3.136-0.896-3.712-0.352-3.712 0.352-3.168 0.896-2.592 1.344-2.144 1.568-1.664 1.664-1.248 1.568-0.832 1.344-0.48 0.928zM10.016 16q0-2.464 1.728-4.224t4.256-1.76 4.256 1.76 1.76 4.224-1.76 4.256-4.256 1.76-4.256-1.76-1.728-4.256zM12 16q0 1.664 1.184 2.848t2.816 1.152 2.816-1.152 1.184-2.848-1.184-2.816-2.816-1.184-2.816 1.184l2.816 2.816h-4z"></path>
+                                </svg>
+                            </button>
+                        </div>
                         <div className="mt-1 text-xs text-gray-900 font-mono break-all bg-gray-100 p-3 rounded max-h-48 overflow-y-auto">
                             {node.taskOutput ? (
                                 <pre className="whitespace-pre-wrap">
@@ -96,6 +121,15 @@ export default function NodeDetailPanel({ node, onClose, isClosing }: { node: Ta
                     </div>
                 </div>
             </div>
+
+            {/* Expanded View Popup */}
+            {expandedView && (
+                <ExpandedViewPopup
+                    title={expandedView.title}
+                    data={expandedView.data}
+                    onClose={() => setExpandedView(null)}
+                />
+            )}
         </aside>
     );
 }
