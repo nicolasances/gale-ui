@@ -27,6 +27,8 @@ export function LaunchTaskPopup({ onClose, onTaskLaunched }: LaunchTaskPopupProp
 
         } catch (err) {
             setError("Failed to load agents");
+            console.log(err);
+            
         }
     };
 
@@ -213,7 +215,7 @@ export function LaunchTaskPopup({ onClose, onTaskLaunched }: LaunchTaskPopupProp
 
                             {searchQuery && filteredAgents.length === 0 && (
                                 <div className="mt-2 p-4 text-sm text-gray-500 text-center">
-                                    No agents found matching "{searchQuery}"
+                                    No agents found matching {searchQuery}
                                 </div>
                             )}
                         </div>
