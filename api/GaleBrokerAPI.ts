@@ -39,6 +39,25 @@ export class GaleBrokerAPI {
         return (await new TotoAPI().fetch('gale-broker', `/tasks/${correlationId}/graph`)).json()
     }
 
+    /**
+     * Posts a new task to be executed by an Gale Agent.
+     * 
+     * @param taskId the task id
+     * @param taskInputData the input data needed by the task
+     * @returns 
+     */
+    async postTask(taskId: string, taskInputData: any): Promise<any> {
+
+        return (await new TotoAPI().fetch('gale-broker', `/tasks`, {
+            method: 'POST',
+            body: JSON.stringify({
+                command: { command: "start" },
+                taskId: taskId,
+                taskInputData: taskInputData
+            })
+        })).json()
+    }
+
 
 }
 
@@ -77,8 +96,8 @@ export interface AgentDefinition {
     name: string; // The name of the Agent.
     description: string; // The description of the Agent.
     taskId: string; // The unique identifier of the type of task this Agent can execute.
-    inputSchema: any; 
-    outputSchema: any; 
+    inputSchema: any;
+    outputSchema: any;
     endpoint: AgentEndpoint;
 }
 
@@ -105,5 +124,5 @@ export interface TaskStatusRecord {
     taskInput: any; // The input data provided to the task execution
 }
 
-export type TaskStatus = "published" | "started" | "waiting" | "completed" | "failed" | "childrenCompleted"; 
+export type TaskStatus = "published" | "started" | "waiting" | "completed" | "failed" | "childrenCompleted";
 export type TaskStopReason = "completed" | "failed" | "subtasks";

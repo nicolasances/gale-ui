@@ -61,7 +61,7 @@ export default function ExecutionDetailPage() {
         let prevElementHeight = 0;
         if (levelInTree > 0) prevElementHeight = parentsCount > 1 ? (Math.floor(parentsCount / AGENTS_PER_ROW) + 1) * ESTIMATED_GROUP_ROW_HEIGHT + EL_HEIGHT : EL_HEIGHT;
 
-        const x = parentX + (isParentGroup ? (GROUP_WIDTH - NODE_WIDTH) / 2 : 0);
+        const x = parentX + (isParentGroup ? (GROUP_WIDTH - NODE_WIDTH) / 2 : 0) + indexInLevel * (GROUP_WIDTH + NODE_X_GAP);
         const y = parentY + prevElementHeight;
 
         return {
