@@ -1,3 +1,4 @@
+import { AgenticFlow } from "./model/AgenticFlow";
 import { TotoAPI } from "./TotoAPI";
 
 export class GaleBrokerAPI {
@@ -36,7 +37,23 @@ export class GaleBrokerAPI {
      * @returns the execution graph
      */
     async getExecutionGraph(correlationId: string): Promise<GetExecutionGraphResponse> {
-        return (await new TotoAPI().fetch('gale-broker', `/tasks/${correlationId}/graph`)).json()
+
+        const response = await (await new TotoAPI().fetch('gale-broker', `/flows/${correlationId}`)).json() as GetExecutionGraphResponse;
+
+        response.flow = AgenticFlow.fromJSON(response.flow);
+
+        return response;
+
+    }
+
+    /**
+     * Gets all tasks for a specific correlation ID.
+     * 
+     * @param correlationId the correlation id
+     * @returns all tasks associated with this correlation ID
+     */
+    async getTasksByCorrelationId(correlationId: string): Promise<GetTasksByCorrelationIdResponse> {
+        return (await new TotoAPI().fetch('gale-broker', `/tasks?correlationId=${correlationId}`)).json()
     }
 
     /**
@@ -74,22 +91,11 @@ interface GetRootTasksResponse {
 }
 
 interface GetExecutionGraphResponse {
-    graph: TaskExecutionGraph;
+    flow: AgenticFlow;
 }
 
-export interface TaskExecutionGraph {
-    rootNode: TaskExecutionGraphNode;
-}
-
-export interface TaskExecutionGraphNode {
-    record: TaskStatusRecord
-    next: SubtaskGroupNode[] | TaskExecutionGraphNode | null
-}
-
-export interface SubtaskGroupNode {
-    groupId: string;
-    nodes: TaskExecutionGraphNode[];
-    next: SubtaskGroupNode[] | TaskExecutionGraphNode | null;
+interface GetTasksByCorrelationIdResponse {
+    tasks: TaskStatusRecord[];
 }
 
 export interface AgentDefinition {

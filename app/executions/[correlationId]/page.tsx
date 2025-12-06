@@ -1,6 +1,6 @@
 'use client';
 
-import { GaleBrokerAPI, SubtaskGroupNode, TaskExecutionGraphNode, TaskStatusRecord } from "@/api/GaleBrokerAPI";
+import { GaleBrokerAPI, TaskStatusRecord } from "@/api/GaleBrokerAPI";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import ReactFlow, {
@@ -22,6 +22,7 @@ import { TaskNodeComponent, NODE_WIDTH } from "./components/TaskNode";
 import { TaskDataPopup } from "./components/TaskData";
 import NodeDetailPanel from "./components/NodeDetailPanel";
 import { AGENTS_PER_ROW, GROUP_WIDTH, SubgroupData, SubgroupTasksNodeComponent } from "./components/SubgroupTasksNode";
+import { AbstractNode, AgenticFlow, AgentNode, BranchNode, GroupNode } from "@/api/model/AgenticFlow";
 
 const NODE_X_GAP = 30;
 
@@ -41,7 +42,7 @@ export default function ExecutionDetailPage() {
 
     const correlationId = params.correlationId as string;
 
-    const [rootNode, setRootNode] = useState<TaskExecutionGraphNode | null>(null);
+    const [rootNode, setRootNode] = useState<AbstractNode | null>(null);
     const [loading, setLoading] = useState(true);
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -52,7 +53,7 @@ export default function ExecutionDetailPage() {
      * Builds a single node
      * @param node the node data
      */
-    const buildNode = (node: TaskStatusRecord, indexInLevel: number, levelInTree: number, parentsCount: number, parentX: number, parentY: number, isParentGroup: boolean): { node: Node, x: number, y: number } => {
+    const buildNode = (node: AgentNode, indexInLevel: number, levelInTree: number, parentsCount: number, parentX: number, parentY: number, isParentGroup: boolean): { node: Node, x: number, y: number } => {
 
         // Determine the position
         const EL_HEIGHT = 120;
@@ -73,7 +74,7 @@ export default function ExecutionDetailPage() {
                     root: levelInTree === 0,
                     leaf: false,
                     record: node,
-                    agentType: node.resumedAfterSubtasksGroupId || !node.parentTaskId ? "orchestrator" : "agent",
+                    agentType: "agent",
                     onNodeClick: setSelectedNode,
                     isSelected: false
                 },
@@ -92,7 +93,7 @@ export default function ExecutionDetailPage() {
      * @param parentY the parent's Y position
      * @param indexInLevel the index in the current level. It allows to space out sibling groups.
      */
-    const buildGroupNode = (nodes: TaskStatusRecord[], parentX: number, parentY: number, indexInLevel: number): { node: Node, x: number, y: number } => {
+    const buildGroupNode = (groupNode: GroupNode, parentX: number, parentY: number, indexInLevel: number): { node: Node, x: number, y: number } => {
 
         // Determine the position
         const EL_HEIGHT = 100;
@@ -103,15 +104,15 @@ export default function ExecutionDetailPage() {
         const y = parentY + prevElementHeight;
 
         const nodeData: SubgroupData = {
-            groupId: nodes[0].subtaskGroupId!,
+            groupId: groupNode.groupId,
             isSelected: false,
             onNodeClick: setSelectedNode,
-            records: nodes,
+            agents: groupNode.agents,
         }
 
         return {
             node: {
-                id: nodes[0].subtaskGroupId!,
+                id: groupNode.groupId,
                 type: 'groupNode',
                 position: { x, y },
                 data: nodeData,
@@ -123,27 +124,30 @@ export default function ExecutionDetailPage() {
 
     }
 
-    const buildIncomingEdges = (node: TaskStatusRecord, previousLayer: TaskStatusRecord[], isGroup: boolean): Edge[] => {
+    const buildIncomingEdges = (node: AbstractNode, previousLayer: AbstractNode[], isGroup: boolean): Edge[] => {
 
         if (!previousLayer || previousLayer.length === 0) return [];
 
         const edges: Edge[] = [];
 
-        const parentId = previousLayer.length > 1 ? previousLayer[0].subtaskGroupId! : previousLayer[0].taskInstanceId;
-        const nodeId = isGroup ? node.subtaskGroupId! : node.taskInstanceId;
+        let parentId;
+        if (node.prev?.type == 'group') parentId = (node.prev as GroupNode).groupId;
+        else parentId = (node.prev as AgentNode).taskInstanceId;
+
+        const nodeId = isGroup ? (node as GroupNode).groupId : (node as AgentNode).taskInstanceId;
 
         const edge = {
             id: `edge-${parentId}-${nodeId}`,
             source: parentId,
             target: nodeId,
             type: 'customEdge',
-            animated: node.status === 'started' || node.status === 'waiting',
+            animated: false,
             markerEnd: {
                 type: MarkerType.ArrowClosed,
                 color: '#213963ff',
             },
             data: {
-                input: node.taskInput,
+                input: {},
             }
         }
 
@@ -152,48 +156,60 @@ export default function ExecutionDetailPage() {
         return edges;
     }
 
-    const build = (currentNode: TaskExecutionGraphNode | SubtaskGroupNode[] | null, currentLevel: number, parentX: number, parentY: number, parents: TaskStatusRecord[] | null): { nodes: Node[], edges: Edge[] } => {
+    const build = (currentNode: AbstractNode | null, currentLevel: number, parentX: number, parentY: number): { nodes: Node[], edges: Edge[] } => {
 
         if (currentNode == null) return { nodes: [], edges: [] };
 
         const nodes: Node[] = [];
         const edges: Edge[] = [];
 
-        if ("record" in currentNode) {
+        console.log(currentNode.type);
 
-            const isNodeParentAGroup = currentNode.record.resumedAfterSubtasksGroupId != null && currentNode.record.subtaskGroupId == null && parents != null && parents.length > 1;
+        if (currentNode.type === 'agent') {
 
-            const builtNode = buildNode(currentNode.record, 0, currentLevel, parents ? parents.length : 0, parentX, parentY, isNodeParentAGroup);
+            const isNodeParentAGroup = currentNode.prev?.type === 'group';
+            
+            const builtNode = buildNode(currentNode as AgentNode, 0, currentLevel, currentNode.prev ? 1 : 0, parentX, parentY, isNodeParentAGroup);
 
             nodes.push(builtNode.node);
-            edges.push(...buildIncomingEdges(currentNode.record, parents || [], false));
+            edges.push(...buildIncomingEdges(currentNode, currentNode.prev ? [currentNode.prev] : [], false));
 
-            const builtSubtree = build(currentNode.next, currentLevel + 1, builtNode.x, builtNode.y, [currentNode.record])
+            const builtSubtree = build(currentNode.next, currentLevel + 1, builtNode.x, builtNode.y)
 
             nodes.push(...builtSubtree.nodes);
             edges.push(...builtSubtree.edges);
         }
         // Otherwise it's a list of groups
-        else {
+        else if (currentNode.type === 'group') {
 
-            for (let groupIndex = 0; groupIndex < currentNode.length; groupIndex++) {
+            // for (let groupIndex = 0; groupIndex < currentNode.length; groupIndex++) {
 
-                const group = currentNode[groupIndex];
-                const nodesInGroup = group.nodes.map(n => n.record);
+            const group = currentNode as GroupNode;
+            const agents = group.agents;
 
-                let groupNode;
-                if (nodesInGroup.length == 1) groupNode = buildNode(nodesInGroup[0], groupIndex, currentLevel, parents ? parents.length : 0, parentX, parentY, false);
-                else groupNode = buildGroupNode(nodesInGroup, parentX, parentY, groupIndex);
+            let groupNode;
+            if (agents.length == 1) groupNode = buildNode(agents[0], 0, currentLevel, currentNode.prev ? 1 : 0, parentX, parentY, false);
+            else groupNode = buildGroupNode(group, parentX, parentY, 0);
 
-                nodes.push(groupNode.node);
-                edges.push(...buildIncomingEdges(group.nodes[0].record, parents || [], nodesInGroup.length > 1));
+            nodes.push(groupNode.node);
+            edges.push(...buildIncomingEdges(agents[0], agents[0].prev ? [agents[0].prev] : [], agents.length > 1));
 
-                const builtSubtree = build(group.next, currentLevel + 1, groupNode.x, groupNode.y, nodesInGroup)
+            const builtSubtree = build(group.next, currentLevel + 1, groupNode.x, groupNode.y)
+
+            nodes.push(...builtSubtree.nodes);
+            edges.push(...builtSubtree.edges);
+            // }
+        }
+        else if (currentNode.type === 'branch') {
+
+            for (const branch of (currentNode as BranchNode).branches) {
+                const branchNode = branch.branch as AbstractNode;
+
+                const builtSubtree = build(branchNode, currentLevel, parentX, parentY)
 
                 nodes.push(...builtSubtree.nodes);
                 edges.push(...builtSubtree.edges);
             }
-
         }
 
         return { nodes, edges };
@@ -206,9 +222,9 @@ export default function ExecutionDetailPage() {
      * 
      * @param root the root of the execution graph
      */
-    const buildFlow = useCallback((root: TaskExecutionGraphNode) => {
+    const buildFlow = useCallback((root: AbstractNode) => {
 
-        return build(root, 0, 0, 0, null);
+        return build(root, 0, 0, 0);
 
     }, []);
 
@@ -224,9 +240,9 @@ export default function ExecutionDetailPage() {
 
             const response = await new GaleBrokerAPI().getExecutionGraph(correlationId);
 
-            setRootNode(response.graph.rootNode);
+            setRootNode(response.flow.root);
 
-            const { nodes: flowNodes, edges: flowEdges } = buildFlow(response.graph.rootNode);
+            const { nodes: flowNodes, edges: flowEdges } = buildFlow(response.flow.root);
 
             setNodes(flowNodes);
             setEdges(flowEdges);
@@ -268,8 +284,8 @@ export default function ExecutionDetailPage() {
                     </svg>
                 </button>
                 <div>
-                    <div className="text-xl font-bold"><span className="text-cyan-400">Flow |</span> {rootNode!.record.agentName}</div>
-                    <p className="text-xs text-gray-500">Started: {new Date(rootNode!.record.startedAt).toLocaleString()}</p>
+                    <div className="text-xl font-bold"><span className="text-cyan-400">Flow |</span> {rootNode?.name}</div>
+                    <p className="text-xs text-gray-500">Started: {new Date().toLocaleString()}</p>
                 </div>
             </div>
 
