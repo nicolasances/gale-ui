@@ -25,7 +25,7 @@ import { AGENTS_PER_ROW, GROUP_WIDTH, SubgroupData, SubgroupTasksNodeComponent }
 import { AbstractNode, AgenticFlow, AgentNode, BranchNode, GroupNode } from "@/api/model/AgenticFlow";
 
 const NODE_X_GAP = 30;
-const ESTIMATED_GROUP_ROW_HEIGHT = 50;
+const ESTIMATED_GROUP_ROW_HEIGHT = 60;
 
 const nodeTypes = {
     taskNode: TaskNodeComponent,
@@ -109,6 +109,7 @@ export default function ExecutionDetailPage() {
 
         // Determine the position
         const EL_HEIGHT = 100;
+        const GROUP2GROUP_PADDING = 40;
 
         // Check if the parent is a group and count how many agents that group has
         let followsFromGroup = false;
@@ -123,7 +124,7 @@ export default function ExecutionDetailPage() {
         }
 
         let prevElementHeight = EL_HEIGHT;
-        if (followsFromGroup) prevElementHeight = agentsInParentGroup > 1 ? (Math.floor(agentsInParentGroup / AGENTS_PER_ROW) + 1) * ESTIMATED_GROUP_ROW_HEIGHT + EL_HEIGHT : EL_HEIGHT;
+        if (followsFromGroup) prevElementHeight = GROUP2GROUP_PADDING + (agentsInParentGroup > 1 ? (Math.floor(agentsInParentGroup / AGENTS_PER_ROW) + 1) * ESTIMATED_GROUP_ROW_HEIGHT + EL_HEIGHT : EL_HEIGHT);
 
         const x = parentX - (GROUP_WIDTH - NODE_WIDTH) / 2 + indexInLevel * (GROUP_WIDTH + NODE_X_GAP);
         const y = parentY + prevElementHeight;
@@ -149,17 +150,22 @@ export default function ExecutionDetailPage() {
 
     }
 
-    const buildIncomingEdges = (node: AbstractNode, previousLayer: AbstractNode[], isGroup: boolean): Edge[] => {
+    const buildIncomingEdges = (node: AbstractNode): Edge[] => {
 
-        if (!previousLayer || previousLayer.length === 0) return [];
+        if (!node.prev) return [];
 
         const edges: Edge[] = [];
 
         let parentId;
         if (node.prev?.type == 'group') parentId = (node.prev as GroupNode).groupId;
+        else if (node.prev?.type == 'branch') {
+            // Navigate one more back to find the parent
+            if (node.prev.prev?.type == 'group') parentId = (node.prev.prev as GroupNode).groupId;
+            else parentId = (node.prev.prev as AgentNode).taskInstanceId;
+        }
         else parentId = (node.prev as AgentNode).taskInstanceId;
 
-        const nodeId = isGroup ? (node as GroupNode).groupId : (node as AgentNode).taskInstanceId;
+        const nodeId = node.type === 'group' ? (node as GroupNode).groupId : (node as AgentNode).taskInstanceId;
 
         const edge = {
             id: `edge-${parentId}-${nodeId}`,
@@ -189,7 +195,7 @@ export default function ExecutionDetailPage() {
         const edges: Edge[] = [];
 
         if (currentNode.type === 'agent') {
-            
+
             // If the parent is a branch, we need to find the correct group index
             let indexInLevel = 0;
             if (currentNode.prev && currentNode.prev.type === 'branch') {
@@ -206,7 +212,7 @@ export default function ExecutionDetailPage() {
             const builtNode = buildNode(currentNode as AgentNode, indexInLevel, currentLevel, parentX, parentY);
 
             nodes.push(builtNode.node);
-            edges.push(...buildIncomingEdges(currentNode, currentNode.prev ? [currentNode.prev] : [], false));
+            edges.push(...buildIncomingEdges(currentNode));
 
             const builtSubtree = build(currentNode.next, currentLevel + 1, builtNode.x, builtNode.y)
 
@@ -234,7 +240,7 @@ export default function ExecutionDetailPage() {
             const groupNode = buildGroupNode(group, parentX, parentY, indexInLevel);
 
             nodes.push(groupNode.node);
-            edges.push(...buildIncomingEdges(agents[0], agents[0].prev ? [agents[0].prev] : [], agents.length > 1));
+            edges.push(...buildIncomingEdges(group));
 
             const builtSubtree = build(group.next, currentLevel + 1, groupNode.x, groupNode.y)
 
