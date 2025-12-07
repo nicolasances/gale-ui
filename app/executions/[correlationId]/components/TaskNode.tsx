@@ -23,7 +23,7 @@ export function TaskNodeComponent({ data }: { data: any }) {
             {!data.root && <Handle type="target" position={Position.Top} />}
             <div className="space-y-3">
                 <div className="flex items-center gap-4">
-                    <AgentTypeIcon agentType={data.agentType} />
+                    <AgentTypeIcon agentType={data.agentType} status={data.record.status} />
                     <div className="text-lg font-semibold text-gray-900 pt-1 flex-1 min-w-0 truncate">{data.record.name || '-'}</div>
                     <div className="flex-shrink-0">
                         <StatusBadge status={data.record.status} />

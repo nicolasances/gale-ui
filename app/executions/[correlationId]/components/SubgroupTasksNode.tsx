@@ -18,8 +18,10 @@ export function SubgroupTasksNodeComponent({ data }: { data: SubgroupData }) {
         }
     };
 
-    // const status = data.agents.every(r => r.status === 'completed') ? 'completed' : "waiting";
-    const status = "waiting"
+    let status: "completed" | "started" | "failed" = "started"; 
+    if (data.agents.every(r => r.status === 'completed')) status = 'completed';
+    else if (data.agents.some(r => r.status === 'failed')) status = 'failed';
+
     const numAgents = data.agents.length;
 
     return (
@@ -30,7 +32,7 @@ export function SubgroupTasksNodeComponent({ data }: { data: SubgroupData }) {
             <Handle type="target" position={Position.Top} />
             <div className="space-y-3">
                 <div className="flex gap-4 items-start">
-                    <AgentTypeIcon agentType="group" />
+                    <AgentTypeIcon agentType="group" status={status} />
                     <div>
                         <div className="mb-2">
                             <div className="text-lg font-semibold text-gray-900 pt-1 flex-1 min-w-0 truncate">{data.agents[0].taskId || '-'} ({numAgents})</div>
@@ -52,9 +54,21 @@ export function SubgroupTasksNodeComponent({ data }: { data: SubgroupData }) {
 
 function SubgroupNode({ agent, onClick, isSelected }: { agent: AgentNode, onClick?: (agent: AgentNode) => void, isSelected: boolean }) {
 
+    let backgroundColor = 'bg-gray-100';
+    let borderColor = 'border-gray-300';
+    if (isSelected) {
+        backgroundColor = 'bg-blue-100';
+        borderColor = 'border-blue-500';
+    } else if (agent.status === 'completed') {
+        backgroundColor = 'bg-green-100';
+    } else if (agent.status === 'failed') {
+        backgroundColor = 'bg-red-400';
+        borderColor = 'border-red-400';
+    }
+
     return (
-        <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${isSelected ? 'bg-blue-100 border-blue-500' : 'bg-gray-100 border-gray-300'}`} onClick={() => { if(onClick) onClick(agent) }}>
-            <AgentTypeIcon agentType='agent' />
+        <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${backgroundColor} ${borderColor}`} onClick={() => { if(onClick) onClick(agent) }}>
+            <AgentTypeIcon agentType='agent' status={agent.status} />
         </div>
     )
 }

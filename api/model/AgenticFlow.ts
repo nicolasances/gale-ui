@@ -37,6 +37,7 @@ export class AgenticFlow {
             const node = new AgentNode({
                 taskId: json.taskId,
                 taskInstanceId: json.taskInstanceId,
+                status: json.status,
                 name: json.name || undefined,
             });
 
@@ -143,13 +144,15 @@ export class AgentNode extends AbstractNode {
 
     taskId: string;
     taskInstanceId: string;
+    status: "started" | "completed" | "failed";
 
-    constructor({ taskId, taskInstanceId, name, next }: { taskId: string, taskInstanceId: string, name?: string, next?: AbstractNode }) {
+    constructor({ taskId, taskInstanceId, status, name, next }: { taskId: string, taskInstanceId: string, status: "started" | "completed" | "failed", name?: string, next?: AbstractNode }) {
         super();
 
         this.taskId = taskId;
         this.taskInstanceId = taskInstanceId;
         this.type = "agent";
+        this.status = status || "started";
         if (name) this.name = name;
         if (next) this.next = next;
     }
