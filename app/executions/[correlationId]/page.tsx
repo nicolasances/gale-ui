@@ -23,9 +23,16 @@ import { TaskDataPopup } from "./components/TaskData";
 import NodeDetailPanel from "./components/NodeDetailPanel";
 import { AGENTS_PER_ROW, GROUP_WIDTH, SubgroupData, SubgroupTasksNodeComponent } from "./components/SubgroupTasksNode";
 import { AbstractNode, AgenticFlow, AgentNode, BranchNode, GroupNode } from "@/api/model/AgenticFlow";
+import { FlowGraphUtil, GraphLevels } from "./util/FlowGraphUtil";
 
-const NODE_X_GAP = 30;
-const ESTIMATED_GROUP_ROW_HEIGHT = 60;
+const UI_SIZES = {
+    nodeXGap: 30,
+    estimatedGroupRowHeight: 60,
+    agentNodeHeight: 120,
+    agentNodeWidth: NODE_WIDTH,
+    groupNodeWidth: GROUP_WIDTH,
+    agentsPerRowInGroup: AGENTS_PER_ROW,
+}
 
 const nodeTypes = {
     taskNode: TaskNodeComponent,
@@ -54,10 +61,7 @@ export default function ExecutionDetailPage() {
      * Builds a single node
      * @param node the node data
      */
-    const buildNode = (node: AgentNode, indexInLevel: number, levelInTree: number, parentX: number, parentY: number): { node: Node, x: number, y: number } => {
-
-        // Determine the position
-        const EL_HEIGHT = 120;
+    const buildNode = (node: AgentNode, indexInLevel: number, levelInTree: number, parentX: number, parentY: number, levels: GraphLevels): { node: Node, x: number, y: number } => {
 
         // Check if the parent is a group and count how many agents that group has
         let followsFromGroup = false;
@@ -72,9 +76,9 @@ export default function ExecutionDetailPage() {
         }
 
         let prevElementHeight = 0;
-        if (levelInTree > 0) prevElementHeight = agentsInParentGroup > 1 ? (Math.floor(agentsInParentGroup / AGENTS_PER_ROW) + 1) * ESTIMATED_GROUP_ROW_HEIGHT + EL_HEIGHT : EL_HEIGHT;
+        if (levelInTree > 0) prevElementHeight = agentsInParentGroup > 1 ? (Math.floor(agentsInParentGroup / UI_SIZES.agentsPerRowInGroup) + 1) * UI_SIZES.estimatedGroupRowHeight + UI_SIZES.agentNodeHeight : UI_SIZES.agentNodeHeight;
 
-        const x = parentX + (followsFromGroup ? (GROUP_WIDTH - NODE_WIDTH) / 2 : 0) + indexInLevel * (GROUP_WIDTH + NODE_X_GAP);
+        const x = parentX + (followsFromGroup ? (UI_SIZES.groupNodeWidth - UI_SIZES.agentNodeWidth) / 2 : 0) + indexInLevel * (UI_SIZES.groupNodeWidth + UI_SIZES.nodeXGap);
         const y = parentY + prevElementHeight;
 
         return {
@@ -104,11 +108,11 @@ export default function ExecutionDetailPage() {
      * @param parentX the parent's X position
      * @param parentY the parent's Y position
      * @param indexInLevel the index in the current level. It allows to space out sibling groups.
+     * @param levels the graph levels data
      */
-    const buildGroupNode = (groupNode: GroupNode, parentX: number, parentY: number, indexInLevel: number): { node: Node, x: number, y: number } => {
+    const buildGroupNode = (groupNode: GroupNode, parentX: number, parentY: number, indexInLevel: number, levels: GraphLevels): { node: Node, x: number, y: number } => {
 
         // Determine the position
-        const EL_HEIGHT = 100;
         const GROUP2GROUP_PADDING = 40;
 
         // Check if the parent is a group and count how many agents that group has
@@ -123,10 +127,10 @@ export default function ExecutionDetailPage() {
             agentsInParentGroup = (groupNode.prev as GroupNode).agents.length;
         }
 
-        let prevElementHeight = EL_HEIGHT;
-        if (followsFromGroup) prevElementHeight = GROUP2GROUP_PADDING + (agentsInParentGroup > 1 ? (Math.floor(agentsInParentGroup / AGENTS_PER_ROW) + 1) * ESTIMATED_GROUP_ROW_HEIGHT + EL_HEIGHT : EL_HEIGHT);
+        let prevElementHeight = UI_SIZES.agentNodeHeight;
+        if (followsFromGroup) prevElementHeight = GROUP2GROUP_PADDING + (agentsInParentGroup > 1 ? (Math.floor(agentsInParentGroup / UI_SIZES.agentsPerRowInGroup) + 1) * UI_SIZES.estimatedGroupRowHeight + UI_SIZES.agentNodeHeight : UI_SIZES.agentNodeHeight);
 
-        const x = parentX - (GROUP_WIDTH - NODE_WIDTH) / 2 + indexInLevel * (GROUP_WIDTH + NODE_X_GAP);
+        const x = parentX - (UI_SIZES.groupNodeWidth - UI_SIZES.agentNodeWidth) / 2 + indexInLevel * (UI_SIZES.groupNodeWidth + UI_SIZES.nodeXGap);
         const y = parentY + prevElementHeight;
 
         const nodeData: SubgroupData = {
@@ -187,7 +191,7 @@ export default function ExecutionDetailPage() {
         return edges;
     }
 
-    const build = (currentNode: AbstractNode | null, currentLevel: number, parentX: number, parentY: number): { nodes: Node[], edges: Edge[] } => {
+    const build = (currentNode: AbstractNode | null, currentLevel: number, parentX: number, parentY: number, levels: GraphLevels): { nodes: Node[], edges: Edge[] } => {
 
         if (currentNode == null) return { nodes: [], edges: [] };
 
@@ -209,12 +213,12 @@ export default function ExecutionDetailPage() {
                 }
             }
 
-            const builtNode = buildNode(currentNode as AgentNode, indexInLevel, currentLevel, parentX, parentY);
+            const builtNode = buildNode(currentNode as AgentNode, indexInLevel, currentLevel, parentX, parentY, levels);
 
             nodes.push(builtNode.node);
             edges.push(...buildIncomingEdges(currentNode));
 
-            const builtSubtree = build(currentNode.next, currentLevel + 1, builtNode.x, builtNode.y)
+            const builtSubtree = build(currentNode.next, currentLevel + 1, builtNode.x, builtNode.y, levels)
 
             nodes.push(...builtSubtree.nodes);
             edges.push(...builtSubtree.edges);
@@ -237,12 +241,12 @@ export default function ExecutionDetailPage() {
             const group = currentNode as GroupNode;
             const agents = group.agents;
 
-            const groupNode = buildGroupNode(group, parentX, parentY, indexInLevel);
+            const groupNode = buildGroupNode(group, parentX, parentY, indexInLevel, levels);
 
             nodes.push(groupNode.node);
             edges.push(...buildIncomingEdges(group));
 
-            const builtSubtree = build(group.next, currentLevel + 1, groupNode.x, groupNode.y)
+            const builtSubtree = build(group.next, currentLevel + 1, groupNode.x, groupNode.y, levels)
 
             nodes.push(...builtSubtree.nodes);
             edges.push(...builtSubtree.edges);
@@ -254,7 +258,7 @@ export default function ExecutionDetailPage() {
 
                 const branchNode = branch.branch as AbstractNode;
 
-                const builtSubtree = build(branchNode, currentLevel, parentX, parentY)
+                const builtSubtree = build(branchNode, currentLevel, parentX, parentY, levels)
 
                 nodes.push(...builtSubtree.nodes);
                 edges.push(...builtSubtree.edges);
@@ -271,9 +275,10 @@ export default function ExecutionDetailPage() {
      * 
      * @param root the root of the execution graph
      */
-    const buildFlow = useCallback((root: AbstractNode) => {
+    const buildFlow = useCallback((root: AbstractNode, levels: GraphLevels) => {
 
-        return build(root, 0, 0, 0);
+        // Recursively build the flow
+        return build(root, 0, 0, 0, levels);
 
     }, []);
 
@@ -291,7 +296,11 @@ export default function ExecutionDetailPage() {
 
             setRootNode(response.flow.root);
 
-            const { nodes: flowNodes, edges: flowEdges } = buildFlow(response.flow.root);
+            // Preprocess the layers
+            const levels = new FlowGraphUtil(response.flow, UI_SIZES).buildLevels();
+
+            // Build the flow
+            const { nodes: flowNodes, edges: flowEdges } = buildFlow(response.flow.root, levels);
 
             setNodes(flowNodes);
             setEdges(flowEdges);
