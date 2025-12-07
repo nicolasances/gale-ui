@@ -1,6 +1,5 @@
 import { Handle, Position } from "reactflow";
 import AgentTypeIcon from "./AgentTypeIcon";
-import { TaskStatusRecord } from "@/api/GaleBrokerAPI";
 import { StatusBadge } from "./StatusBadge";
 import { AgentNode } from "@/api/model/AgenticFlow";
 

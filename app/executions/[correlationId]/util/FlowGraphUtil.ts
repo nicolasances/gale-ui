@@ -49,7 +49,7 @@ export class FlowGraphUtil {
                 numGroups += 1;
                 totalWidth += this.sizes.groupNodeWidth;
 
-                let estimatedGroupHeight = (Math.floor(numAgents / this.sizes.agentsPerRowInGroup) + 1) * this.sizes.estimatedGroupRowHeight + this.sizes.agentNodeHeight
+                const estimatedGroupHeight = (Math.floor(numAgents / this.sizes.agentsPerRowInGroup) + 1) * this.sizes.estimatedGroupRowHeight + this.sizes.agentNodeHeight
 
                 if (highestNode < estimatedGroupHeight) highestNode = estimatedGroupHeight;
             }

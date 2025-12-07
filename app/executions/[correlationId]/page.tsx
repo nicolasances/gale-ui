@@ -1,6 +1,6 @@
 'use client';
 
-import { GaleBrokerAPI, TaskStatusRecord } from "@/api/GaleBrokerAPI";
+import { GaleBrokerAPI } from "@/api/GaleBrokerAPI";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import ReactFlow, {
@@ -22,7 +22,7 @@ import { TaskNodeComponent, NODE_WIDTH } from "./components/TaskNode";
 import { TaskDataPopup } from "./components/TaskData";
 import NodeDetailPanel from "./components/NodeDetailPanel";
 import { AGENTS_PER_ROW, GROUP_WIDTH, SubgroupData, SubgroupTasksNodeComponent } from "./components/SubgroupTasksNode";
-import { AbstractNode, AgenticFlow, AgentNode, BranchNode, GroupNode } from "@/api/model/AgenticFlow";
+import { AbstractNode, AgentNode, BranchNode, GroupNode } from "@/api/model/AgenticFlow";
 import { FlowGraphUtil, GraphLevels } from "./util/FlowGraphUtil";
 
 const UI_SIZES = {
@@ -89,21 +89,17 @@ export default function ExecutionDetailPage() {
         }
 
         // Check if the parent is a group and count how many agents that group has
-        let followsFromGroup = false;
         let agentsInParentGroup = 0;
         if (node.prev && node.prev.type === 'branch' && node.prev.prev && node.prev.prev.type === 'group') {
-            followsFromGroup = true;
             agentsInParentGroup = (node.prev.prev as GroupNode).agents.length;
         }
         else if (node.prev && node.prev.type === 'group') {
-            followsFromGroup = true;
             agentsInParentGroup = (node.prev as GroupNode).agents.length;
         }
 
         let prevElementHeight = 0;
         if (levelInTree > 0) prevElementHeight = agentsInParentGroup > 1 ? (Math.floor(agentsInParentGroup / UI_SIZES.agentsPerRowInGroup) + 1) * UI_SIZES.estimatedGroupRowHeight + UI_SIZES.agentNodeHeight : UI_SIZES.agentNodeHeight;
 
-        // const x = parentX + (followsFromGroup ? (UI_SIZES.groupNodeWidth - UI_SIZES.agentNodeWidth) / 2 : 0) + indexInLevel * (UI_SIZES.groupNodeWidth + UI_SIZES.nodeXGap);
         const y = parentY + prevElementHeight;
 
         return {
@@ -306,7 +302,6 @@ export default function ExecutionDetailPage() {
                 siblingsInfo = { totalWidth, nodeTypes };
             }
             const group = currentNode as GroupNode;
-            const agents = group.agents;
 
             const parentCenterX = parentX + parentWidth / 2;
             const groupNode = buildGroupNode(group, parentX, parentY, indexInLevel, currentLevel, levels, parentCenterX, siblingsInfo);

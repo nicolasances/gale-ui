@@ -15,8 +15,6 @@ export function StatusBadge({ status }: { status: TaskStatus }) {
         failed: "bg-red-100 text-red-800",
     };
 
-    const showIcon = status === 'completed' || status === 'failed'; 
-
     return (
         <div className={`flex ${colors[status]} w-8 h-8 justify-center items-center rounded-full`}>
             {status === 'completed' ? (
