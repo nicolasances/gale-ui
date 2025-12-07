@@ -32,7 +32,7 @@ export function SubgroupTasksNodeComponent({ data }: { data: SubgroupData }) {
             <Handle type="target" position={Position.Top} />
             <div className="space-y-3">
                 <div className="flex gap-4 items-start">
-                    <AgentTypeIcon agentType="group" status={status} />
+                    <AgentTypeIcon agentType="group" />
                     <div>
                         <div className="mb-2">
                             <div className="text-lg font-semibold text-gray-900 pt-1 flex-1 min-w-0 truncate">{data.agents[0].taskId || '-'} ({numAgents})</div>

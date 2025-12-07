@@ -1,6 +1,6 @@
 
 
-export default function AgentTypeIcon({ agentType, status }: { agentType: "agent" | "orchestrator" | "group", status: "completed" | "started" | "failed" }) {
+export default function AgentTypeIcon({ agentType, status }: { agentType: "agent" | "orchestrator" | "group", status?: "completed" | "started" | "failed" }) {
 
     let colorClass = 'text-gray-700';
     if (status === 'completed') {
