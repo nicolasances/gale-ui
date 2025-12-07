@@ -1,5 +1,4 @@
 import { AbstractNode, AgenticFlow, BranchNode } from "@/api/model/AgenticFlow";
-import { AGENTS_PER_ROW } from "../components/SubgroupTasksNode";
 
 
 export class FlowGraphUtil {
@@ -65,6 +64,7 @@ export class FlowGraphUtil {
             height: highestNode,
             numGroups: numGroups,
             numAgents: numAgents,
+            orderedNodeTypes: levelNodes.map(node => node.type),
         });
 
         // Determine the next level nodes
@@ -113,6 +113,7 @@ export interface GraphLevel {
     height: number;     // Estimated height of the level
     numGroups: number;  // Number of groups in this level
     numAgents: number;  // Total number of agents in this level, EXCLUDING those inside groups
+    orderedNodeTypes: string[]; // Ordered list of node types in this level (either "agent" or "group")
 }
 
 export interface Sizes {

@@ -61,7 +61,32 @@ export default function ExecutionDetailPage() {
      * Builds a single node
      * @param node the node data
      */
-    const buildNode = (node: AgentNode, indexInLevel: number, levelInTree: number, parentX: number, parentY: number, levels: GraphLevels): { node: Node, x: number, y: number } => {
+    const buildNode = (node: AgentNode, indexInLevel: number, levelInTree: number, parentX: number, parentY: number, levels: GraphLevels, parentCenterX: number, siblingsInfo?: { totalWidth: number, nodeTypes: string[] }): { node: Node, x: number, y: number } => {
+
+        // Determine the X position of this node
+        let x: number;
+        if (levelInTree === 0) {
+            // Root level: center on the graph
+            const levelWidth = levels.levels[levelInTree].width;
+            const startX = levels.centerX - (levelWidth / 2);
+            x = startX + levels.levels[levelInTree].orderedNodeTypes.slice(0, indexInLevel).reduce((acc, currType) => {
+                if (currType === 'agent') return acc + UI_SIZES.agentNodeWidth + UI_SIZES.nodeXGap;
+                else if (currType === 'group') return acc + UI_SIZES.groupNodeWidth + UI_SIZES.nodeXGap;
+                return acc;
+            }, 0);
+        } else if (siblingsInfo) {
+            // Part of a branch: center siblings around parent
+            const startX = parentCenterX - (siblingsInfo.totalWidth / 2);
+            x = startX + siblingsInfo.nodeTypes.slice(0, indexInLevel).reduce((acc, currType) => {
+                if (currType === 'agent') return acc + UI_SIZES.agentNodeWidth + UI_SIZES.nodeXGap;
+                else if (currType === 'group') return acc + UI_SIZES.groupNodeWidth + UI_SIZES.nodeXGap;
+                return acc;
+            }, 0);
+        } else {
+            // Single child: center on parent
+            const childWidth = UI_SIZES.agentNodeWidth;
+            x = parentCenterX - (childWidth / 2);
+        }
 
         // Check if the parent is a group and count how many agents that group has
         let followsFromGroup = false;
@@ -78,7 +103,7 @@ export default function ExecutionDetailPage() {
         let prevElementHeight = 0;
         if (levelInTree > 0) prevElementHeight = agentsInParentGroup > 1 ? (Math.floor(agentsInParentGroup / UI_SIZES.agentsPerRowInGroup) + 1) * UI_SIZES.estimatedGroupRowHeight + UI_SIZES.agentNodeHeight : UI_SIZES.agentNodeHeight;
 
-        const x = parentX + (followsFromGroup ? (UI_SIZES.groupNodeWidth - UI_SIZES.agentNodeWidth) / 2 : 0) + indexInLevel * (UI_SIZES.groupNodeWidth + UI_SIZES.nodeXGap);
+        // const x = parentX + (followsFromGroup ? (UI_SIZES.groupNodeWidth - UI_SIZES.agentNodeWidth) / 2 : 0) + indexInLevel * (UI_SIZES.groupNodeWidth + UI_SIZES.nodeXGap);
         const y = parentY + prevElementHeight;
 
         return {
@@ -110,7 +135,7 @@ export default function ExecutionDetailPage() {
      * @param indexInLevel the index in the current level. It allows to space out sibling groups.
      * @param levels the graph levels data
      */
-    const buildGroupNode = (groupNode: GroupNode, parentX: number, parentY: number, indexInLevel: number, levels: GraphLevels): { node: Node, x: number, y: number } => {
+    const buildGroupNode = (groupNode: GroupNode, parentX: number, parentY: number, indexInLevel: number, levelInTree: number, levels: GraphLevels, parentCenterX: number, siblingsInfo?: { totalWidth: number, nodeTypes: string[] }): { node: Node, x: number, y: number } => {
 
         // Determine the position
         const GROUP2GROUP_PADDING = 40;
@@ -130,7 +155,30 @@ export default function ExecutionDetailPage() {
         let prevElementHeight = UI_SIZES.agentNodeHeight;
         if (followsFromGroup) prevElementHeight = GROUP2GROUP_PADDING + (agentsInParentGroup > 1 ? (Math.floor(agentsInParentGroup / UI_SIZES.agentsPerRowInGroup) + 1) * UI_SIZES.estimatedGroupRowHeight + UI_SIZES.agentNodeHeight : UI_SIZES.agentNodeHeight);
 
-        const x = parentX - (UI_SIZES.groupNodeWidth - UI_SIZES.agentNodeWidth) / 2 + indexInLevel * (UI_SIZES.groupNodeWidth + UI_SIZES.nodeXGap);
+        // Determine x position
+        let x: number;
+        if (levelInTree === 0) {
+            // Root level: center on the graph
+            const levelWidth = levels.levels[levelInTree].width;
+            const startX = levels.centerX - (levelWidth / 2);
+            x = startX + levels.levels[levelInTree].orderedNodeTypes.slice(0, indexInLevel).reduce((acc, currType) => {
+                if (currType === 'agent') return acc + UI_SIZES.agentNodeWidth + UI_SIZES.nodeXGap;
+                else if (currType === 'group') return acc + UI_SIZES.groupNodeWidth + UI_SIZES.nodeXGap;
+                return acc;
+            }, 0);
+        } else if (siblingsInfo) {
+            // Part of a branch: center siblings around parent
+            const startX = parentCenterX - (siblingsInfo.totalWidth / 2);
+            x = startX + siblingsInfo.nodeTypes.slice(0, indexInLevel).reduce((acc, currType) => {
+                if (currType === 'agent') return acc + UI_SIZES.agentNodeWidth + UI_SIZES.nodeXGap;
+                else if (currType === 'group') return acc + UI_SIZES.groupNodeWidth + UI_SIZES.nodeXGap;
+                return acc;
+            }, 0);
+        } else {
+            // Single child: center on parent
+            const childWidth = UI_SIZES.groupNodeWidth;
+            x = parentCenterX - (childWidth / 2);
+        }
         const y = parentY + prevElementHeight;
 
         const nodeData: SubgroupData = {
@@ -191,7 +239,7 @@ export default function ExecutionDetailPage() {
         return edges;
     }
 
-    const build = (currentNode: AbstractNode | null, currentLevel: number, parentX: number, parentY: number, levels: GraphLevels): { nodes: Node[], edges: Edge[] } => {
+    const build = (currentNode: AbstractNode | null, currentLevel: number, parentX: number, parentY: number, parentWidth: number, levels: GraphLevels): { nodes: Node[], edges: Edge[] } => {
 
         if (currentNode == null) return { nodes: [], edges: [] };
 
@@ -200,8 +248,9 @@ export default function ExecutionDetailPage() {
 
         if (currentNode.type === 'agent') {
 
-            // If the parent is a branch, we need to find the correct group index
+            // If the parent is a branch, we need to find the correct group index and calculate siblings info
             let indexInLevel = 0;
+            let siblingsInfo: { totalWidth: number, nodeTypes: string[] } | undefined = undefined;
             if (currentNode.prev && currentNode.prev.type === 'branch') {
                 const branchNode = currentNode.prev as BranchNode;
                 for (let bIndex = 0; bIndex < branchNode.branches.length; bIndex++) {
@@ -211,14 +260,23 @@ export default function ExecutionDetailPage() {
                         break;
                     }
                 }
+                // Calculate siblingsInfo
+                const nodeTypes = branchNode.branches.map(b => b.branch.type);
+                const totalWidth = nodeTypes.reduce((acc, type, idx) => {
+                    const width = type === 'agent' ? UI_SIZES.agentNodeWidth : UI_SIZES.groupNodeWidth;
+                    const gap = idx > 0 ? UI_SIZES.nodeXGap : 0;
+                    return acc + width + gap;
+                }, 0);
+                siblingsInfo = { totalWidth, nodeTypes };
             }
 
-            const builtNode = buildNode(currentNode as AgentNode, indexInLevel, currentLevel, parentX, parentY, levels);
+            const parentCenterX = parentX + parentWidth / 2;
+            const builtNode = buildNode(currentNode as AgentNode, indexInLevel, currentLevel, parentX, parentY, levels, parentCenterX, siblingsInfo);
 
             nodes.push(builtNode.node);
             edges.push(...buildIncomingEdges(currentNode));
 
-            const builtSubtree = build(currentNode.next, currentLevel + 1, builtNode.x, builtNode.y, levels)
+            const builtSubtree = build(currentNode.next, currentLevel + 1, builtNode.x, builtNode.y, UI_SIZES.agentNodeWidth, levels)
 
             nodes.push(...builtSubtree.nodes);
             edges.push(...builtSubtree.edges);
@@ -226,8 +284,9 @@ export default function ExecutionDetailPage() {
         // Otherwise it's a list of groups
         else if (currentNode.type === 'group') {
 
-            // If the parent is a branch, we need to find the correct group index
+            // If the parent is a branch, we need to find the correct group index and calculate siblings info
             let indexInLevel = 0;
+            let siblingsInfo: { totalWidth: number, nodeTypes: string[] } | undefined = undefined;
             if (currentNode.prev && currentNode.prev.type === 'branch') {
                 const branchNode = currentNode.prev as BranchNode;
                 for (let bIndex = 0; bIndex < branchNode.branches.length; bIndex++) {
@@ -237,16 +296,25 @@ export default function ExecutionDetailPage() {
                         break;
                     }
                 }
+                // Calculate siblingsInfo
+                const nodeTypes = branchNode.branches.map(b => b.branch.type);
+                const totalWidth = nodeTypes.reduce((acc, type, idx) => {
+                    const width = type === 'agent' ? UI_SIZES.agentNodeWidth : UI_SIZES.groupNodeWidth;
+                    const gap = idx > 0 ? UI_SIZES.nodeXGap : 0;
+                    return acc + width + gap;
+                }, 0);
+                siblingsInfo = { totalWidth, nodeTypes };
             }
             const group = currentNode as GroupNode;
             const agents = group.agents;
 
-            const groupNode = buildGroupNode(group, parentX, parentY, indexInLevel, levels);
+            const parentCenterX = parentX + parentWidth / 2;
+            const groupNode = buildGroupNode(group, parentX, parentY, indexInLevel, currentLevel, levels, parentCenterX, siblingsInfo);
 
             nodes.push(groupNode.node);
             edges.push(...buildIncomingEdges(group));
 
-            const builtSubtree = build(group.next, currentLevel + 1, groupNode.x, groupNode.y, levels)
+            const builtSubtree = build(group.next, currentLevel + 1, groupNode.x, groupNode.y, UI_SIZES.groupNodeWidth, levels)
 
             nodes.push(...builtSubtree.nodes);
             edges.push(...builtSubtree.edges);
@@ -258,7 +326,7 @@ export default function ExecutionDetailPage() {
 
                 const branchNode = branch.branch as AbstractNode;
 
-                const builtSubtree = build(branchNode, currentLevel, parentX, parentY, levels)
+                const builtSubtree = build(branchNode, currentLevel, parentX, parentY, parentWidth, levels)
 
                 nodes.push(...builtSubtree.nodes);
                 edges.push(...builtSubtree.edges);
@@ -278,7 +346,7 @@ export default function ExecutionDetailPage() {
     const buildFlow = useCallback((root: AbstractNode, levels: GraphLevels) => {
 
         // Recursively build the flow
-        return build(root, 0, 0, 0, levels);
+        return build(root, 0, 0, 0, 0, levels);
 
     }, []);
 
