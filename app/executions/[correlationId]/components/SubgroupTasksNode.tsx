@@ -59,7 +59,7 @@ function SubgroupNode({ agent, onClick, isSelected }: { agent: AgentNode, onClic
         backgroundColor = 'bg-blue-100';
         borderColor = 'border-blue-500';
     } else if (agent.status === 'completed') {
-        backgroundColor = 'bg-green-100';
+        backgroundColor = 'bg-green-200';
     } else if (agent.status === 'failed') {
         backgroundColor = 'bg-red-400';
         borderColor = 'border-red-400';
