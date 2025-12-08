@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import ExpandedViewPopup from "./ExpandedViewPopup";
 import { AgentNode } from "@/api/model/AgenticFlow";
 import { GaleBrokerAPI, TaskStatusRecord } from "@/api/GaleBrokerAPI";
+import CopyButton from "@/components/CopyButton";
 
 
 /**
@@ -60,19 +61,15 @@ export default function NodeDetailPanel({ node, onClose, isClosing }: { node: Ag
                         <div className="mt-1 text-sm text-gray-900 font-medium">{node.name || '-'}</div>
                     </div>
 
-                    {/* Task ID */}
+                    {/* Task Instance ID */}
                     <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <label className="text-xs font-semibold text-gray-500 uppercase block">Task ID</label>
+                        <label className="text-xs font-semibold text-gray-500 uppercase block">Task</label>
                         <div className="mt-1 text-xs text-gray-900 font-mono break-all">
                             {node.taskId || '-'}
                         </div>
-                    </div>
-
-                    {/* Task Instance ID */}
-                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <label className="text-xs font-semibold text-gray-500 uppercase block">Task Instance ID</label>
-                        <div className="mt-1 text-xs text-gray-900 font-mono break-all">
-                            {node.taskInstanceId || '-'}
+                        <div className="mt-1 text-xs text-gray-900 font-mono break-all flex items-center gap-2">
+                            <span className="mr-1">{node.taskInstanceId || '-'}</span>
+                            {node.taskInstanceId && <CopyButton textToCopy={node.taskInstanceId} />}
                         </div>
                     </div>
 
