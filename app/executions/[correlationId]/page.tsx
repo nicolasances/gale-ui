@@ -1,6 +1,6 @@
 'use client';
 
-import { GaleBrokerAPI } from "@/api/GaleBrokerAPI";
+import { GaleBrokerAPI, TaskStatusRecord } from "@/api/GaleBrokerAPI";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import ReactFlow, {
@@ -56,6 +56,7 @@ export default function ExecutionDetailPage() {
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [selectedNode, setSelectedNode] = useState<any | null>(null);
     const [isClosing, setIsClosing] = useState(false);
+    const [rootStatus, setRootStatus] = useState<TaskStatusRecord | null>(null);
 
     /**
      * Builds a single node
@@ -345,6 +346,11 @@ export default function ExecutionDetailPage() {
 
     }, []);
 
+    const loadTaskStatus = async (taskInstanceId: string) => {
+        const result = await new GaleBrokerAPI().getTaskExecutionRecord(taskInstanceId);
+        return result.task;
+    }
+
 
     /**
      * Loads the execution graph for the given correlation ID.
@@ -358,6 +364,11 @@ export default function ExecutionDetailPage() {
             const response = await new GaleBrokerAPI().getExecutionGraph(correlationId);
 
             setRootNode(response.flow.root);
+
+            // Load the root status
+            if (response.flow.root.getType() === 'agent') {
+                await loadTaskStatus((response.flow.root as AgentNode).taskInstanceId).then(rootStatus => { setRootStatus(rootStatus); });
+            }
 
             // Preprocess the layers
             const levels = new FlowGraphUtil(response.flow, UI_SIZES).buildLevels();
@@ -406,7 +417,7 @@ export default function ExecutionDetailPage() {
                 </button>
                 <div>
                     <div className="text-xl font-bold"><span className="text-cyan-400">Flow |</span> {rootNode?.name}</div>
-                    <p className="text-xs text-gray-500">Started: {new Date().toLocaleString()}</p>
+                    <p className="text-xs text-gray-500">Started: {rootStatus?.startedAt ? new Date(rootStatus.startedAt).toLocaleString() : '-'}</p>
                 </div>
             </div>
 
