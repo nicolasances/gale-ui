@@ -1,20 +1,28 @@
-import { TaskStatusRecord } from "@/api/GaleBrokerAPI";
 import { StatusBadge } from "./StatusBadge";
 import { useState } from "react";
 import ExpandedViewPopup from "./ExpandedViewPopup";
+import { AgentNode } from "@/api/model/AgenticFlow";
+import { GaleBrokerAPI, TaskStatusRecord } from "@/api/GaleBrokerAPI";
 
 
 /**
  * Side panel displaying detailed information about a selected node
  */
-export default function NodeDetailPanel({ node, onClose, isClosing }: { node: TaskStatusRecord; onClose: () => void; isClosing: boolean }) {
+export default function NodeDetailPanel({ node, onClose, isClosing }: { node: AgentNode; onClose: () => void; isClosing: boolean }) {
+    
     const [expandedView, setExpandedView] = useState<{ title: string; data: any } | null>(null);
+    const [taskDetails, setTaskDetails] = useState<TaskStatusRecord | null>(null);
 
     const formatExecutionTime = (ms?: number) => {
         if (!ms) return '-';
         if (ms < 1000) return `${ms}ms`;
         return `${(ms / 1000).toFixed(2)}s`;
     };
+    
+    const getTaskExecutionRecord = async (taskInstanceId: string) => {
+        const result = await new GaleBrokerAPI().getTaskExecutionRecord(taskInstanceId);
+        setTaskDetails(result.task);
+    }
 
     return (
         <aside className={`fixed top-16 right-0 bottom-0 w-96 bg-white shadow-xl z-40 overflow-y-auto border-l border-gray-200 ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
@@ -38,7 +46,7 @@ export default function NodeDetailPanel({ node, onClose, isClosing }: { node: Ta
                     {/* Agent Name */}
                     <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
                         <label className="text-xs font-semibold text-gray-500 uppercase block">Agent Name</label>
-                        <div className="mt-1 text-sm text-gray-900 font-medium">{node.agentName || '-'}</div>
+                        <div className="mt-1 text-sm text-gray-900 font-medium">{node.name || '-'}</div>
                     </div>
 
                     {/* Task ID */}
@@ -70,7 +78,7 @@ export default function NodeDetailPanel({ node, onClose, isClosing }: { node: Ta
                     <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
                         <label className="text-xs font-semibold text-gray-500 uppercase block">Execution Time</label>
                         <div className="mt-1 text-sm text-gray-900 font-medium">
-                            {formatExecutionTime(node.executionTimeMs)}
+                            {formatExecutionTime(taskDetails?.executionTimeMs)}
                         </div>
                     </div>
 
@@ -79,7 +87,7 @@ export default function NodeDetailPanel({ node, onClose, isClosing }: { node: Ta
                         <div className="flex items-center justify-between">
                             <label className="text-xs font-semibold text-gray-500 uppercase">Node Input</label>
                             <button
-                                onClick={() => setExpandedView({ title: 'Node Input', data: node.taskInput })}
+                                onClick={() => setExpandedView({ title: 'Node Input', data: taskDetails?.taskInput })}
                                 className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
                                 title="Expand view"
                             >
@@ -89,9 +97,9 @@ export default function NodeDetailPanel({ node, onClose, isClosing }: { node: Ta
                             </button>
                         </div>
                         <div className="mt-1 text-xs text-gray-900 font-mono break-all bg-gray-100 p-3 rounded max-h-48 overflow-y-auto">
-                            {node.taskInput ? (
+                            {taskDetails?.taskInput ? (
                                 <pre className="whitespace-pre-wrap">
-                                    {JSON.stringify(node.taskInput, null, 2)}
+                                    {JSON.stringify(taskDetails.taskInput, null, 2)}
                                 </pre>
                             ) : '-'}
                         </div>
@@ -102,7 +110,7 @@ export default function NodeDetailPanel({ node, onClose, isClosing }: { node: Ta
                         <div className="flex items-center justify-between">
                             <label className="text-xs font-semibold text-gray-500 uppercase">Node Output</label>
                             <button
-                                onClick={() => setExpandedView({ title: 'Node Output', data: node.taskOutput })}
+                                onClick={() => setExpandedView({ title: 'Node Output', data: taskDetails?.taskOutput })}
                                 className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
                                 title="Expand view"
                             >
@@ -112,9 +120,9 @@ export default function NodeDetailPanel({ node, onClose, isClosing }: { node: Ta
                             </button>
                         </div>
                         <div className="mt-1 text-xs text-gray-900 font-mono break-all bg-gray-100 p-3 rounded max-h-48 overflow-y-auto">
-                            {node.taskOutput ? (
+                            {taskDetails?.taskOutput ? (
                                 <pre className="whitespace-pre-wrap">
-                                    {JSON.stringify(node.taskOutput, null, 2)}
+                                    {JSON.stringify(taskDetails.taskOutput, null, 2)}
                                 </pre>
                             ) : '-'}
                         </div>
