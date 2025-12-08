@@ -133,6 +133,7 @@ export interface TaskStatusRecord {
     taskInstanceId: string; // The task execution ID assigned by the Agent
     agentName?: string; // The name of the Agent executing the task
     startedAt: Date; // Timestamp when the task execution started
+    stoppedAt?: Date; // Timestamp when the task execution stopped
     status: TaskStatus; // Current status of the task execution
     stopReason?: TaskStopReason; // The reason why the task execution stopped
     executionTimeMs?: number; // Execution time, in milliseconds

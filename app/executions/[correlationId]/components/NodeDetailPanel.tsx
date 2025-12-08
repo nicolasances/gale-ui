@@ -1,5 +1,5 @@
 import { StatusBadge } from "./StatusBadge";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ExpandedViewPopup from "./ExpandedViewPopup";
 import { AgentNode } from "@/api/model/AgenticFlow";
 import { GaleBrokerAPI, TaskStatusRecord } from "@/api/GaleBrokerAPI";
@@ -9,20 +9,31 @@ import { GaleBrokerAPI, TaskStatusRecord } from "@/api/GaleBrokerAPI";
  * Side panel displaying detailed information about a selected node
  */
 export default function NodeDetailPanel({ node, onClose, isClosing }: { node: AgentNode; onClose: () => void; isClosing: boolean }) {
-    
+
     const [expandedView, setExpandedView] = useState<{ title: string; data: any } | null>(null);
     const [taskDetails, setTaskDetails] = useState<TaskStatusRecord | null>(null);
 
-    const formatExecutionTime = (ms?: number) => {
+    const formatExecutionTime = () => {
+        let start = taskDetails?.startedAt;
+        let end = taskDetails?.stoppedAt;
+
+        let ms: number | null = null;
+
+        if (start && end) {
+            ms = new Date(end).getTime() - new Date(start).getTime();
+        }
+
         if (!ms) return '-';
         if (ms < 1000) return `${ms}ms`;
         return `${(ms / 1000).toFixed(2)}s`;
     };
-    
+
     const getTaskExecutionRecord = async (taskInstanceId: string) => {
         const result = await new GaleBrokerAPI().getTaskExecutionRecord(taskInstanceId);
         setTaskDetails(result.task);
     }
+
+    useEffect(() => { getTaskExecutionRecord(node.taskInstanceId); }, [node.taskInstanceId]);
 
     return (
         <aside className={`fixed top-16 right-0 bottom-0 w-96 bg-white shadow-xl z-40 overflow-y-auto border-l border-gray-200 ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
@@ -78,7 +89,7 @@ export default function NodeDetailPanel({ node, onClose, isClosing }: { node: Ag
                     <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
                         <label className="text-xs font-semibold text-gray-500 uppercase block">Execution Time</label>
                         <div className="mt-1 text-sm text-gray-900 font-medium">
-                            {formatExecutionTime(taskDetails?.executionTimeMs)}
+                            {formatExecutionTime()}
                         </div>
                     </div>
 
