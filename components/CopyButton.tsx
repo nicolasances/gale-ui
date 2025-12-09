@@ -14,7 +14,8 @@ interface CopyButtonProps {
 export default function CopyButton({ textToCopy, size = 14 }: CopyButtonProps) {
     const [isPressed, setIsPressed] = useState(false);
 
-    const handleCopy = async () => {
+    const handleCopy = async (e: React.MouseEvent) => {
+        e.stopPropagation();
         try {
             await navigator.clipboard.writeText(textToCopy);
             setIsPressed(true);

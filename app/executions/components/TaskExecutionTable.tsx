@@ -1,6 +1,7 @@
 'use client';
 
 import { TaskStatus, TaskStatusRecord, TaskStopReason } from "@/api/GaleBrokerAPI";
+import CopyButton from "@/components/CopyButton";
 import { useRouter } from "next/navigation";
 
 export function TaskExecutionTable({ executions }: { executions: TaskStatusRecord[] }) {
@@ -19,7 +20,7 @@ export function TaskExecutionTable({ executions }: { executions: TaskStatusRecor
                                 Task Type
                             </th>
                             <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Task Instance ID
+                                Flow ID
                             </th>
                             <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Started At
@@ -30,7 +31,7 @@ export function TaskExecutionTable({ executions }: { executions: TaskStatusRecor
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {executions.map((execution) => (
+                        {executions.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()).map((execution) => (
                             <tr
                                 key={execution.taskInstanceId}
                                 onClick={() => router.push(`/executions/${execution.correlationId}`)}
@@ -42,8 +43,9 @@ export function TaskExecutionTable({ executions }: { executions: TaskStatusRecor
                                 <td className="px-4 py-3 whitespace-nowrap text-sm font-mono font-semibold text-gray-900">
                                     {execution.taskId}
                                 </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-xs font-mono text-gray-400">
-                                    {execution.taskInstanceId}
+                                <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-400 flex items-center gap-2">
+                                    <span>{execution.correlationId}</span>
+                                    <CopyButton textToCopy={execution.correlationId} size={12} />
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                     {new Date(execution.startedAt).toLocaleString()}
