@@ -15,8 +15,8 @@ export default function NodeDetailPanel({ node, onClose, isClosing }: { node: Ag
     const [taskDetails, setTaskDetails] = useState<TaskStatusRecord | null>(null);
 
     const formatExecutionTime = () => {
-        let start = taskDetails?.startedAt;
-        let end = taskDetails?.stoppedAt;
+        const start = taskDetails?.startedAt;
+        const end = taskDetails?.stoppedAt;
 
         let ms: number | null = null;
 
