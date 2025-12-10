@@ -18,7 +18,6 @@ export default function InputParameters({ agent, inputParams, onUpdateParam }: I
      */
     const renderInputField = (key: string, propertySchema: any) => {
         const type = propertySchema.type || 'string';
-        const description = propertySchema.description || '';
 
         if (type === 'boolean') {
             return (
@@ -35,7 +34,6 @@ export default function InputParameters({ agent, inputParams, onUpdateParam }: I
                     type="number"
                     value={inputParams[key] || ''}
                     onChange={(e) => onUpdateParam(key, e.target.valueAsNumber)}
-                    placeholder={description}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent text-sm"
                 />
             );
@@ -45,7 +43,6 @@ export default function InputParameters({ agent, inputParams, onUpdateParam }: I
                     type="text"
                     value={inputParams[key] || ''}
                     onChange={(e) => onUpdateParam(key, e.target.value)}
-                    placeholder={description}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent text-sm"
                 />
             );
@@ -53,8 +50,8 @@ export default function InputParameters({ agent, inputParams, onUpdateParam }: I
     };
 
     return (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm sticky top-6">
-            <h3 className="text-base font-semibold text-gray-900 mb-4">Input Parameters</h3>
+        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm sticky top-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-2">Input Parameters</h3>
             <p className="text-xs text-gray-500 mb-4">
                 Set the input parameters for this agent
             </p>

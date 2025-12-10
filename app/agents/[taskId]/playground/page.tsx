@@ -5,6 +5,71 @@ import Button from "@/components/Button";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import InputParameters from "./components/InputParameters";
+import SessionHistoryPanel, { PlaygroundSession } from "./components/SessionHistoryPanel";
+
+// Mock data for previous sessions
+const MOCK_SESSIONS: PlaygroundSession[] = [
+    {
+        id: '1',
+        date: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+        prompt: 'You are a helpful assistant that provides concise answers about programming topics.',
+        inputParams: { topic: 'JavaScript', difficulty: 'intermediate' }
+    },
+    {
+        id: '2',
+        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+        prompt: 'Analyze the following code and suggest improvements with a focus on performance.',
+        inputParams: { language: 'Python', maxSuggestions: 5 }
+    },
+    {
+        id: '3',
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        prompt: 'Generate unit tests for the provided function with edge cases.',
+        inputParams: { framework: 'Jest', coverage: 'high' }
+    },
+    {
+        id: '4',
+        date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        prompt: 'Explain the concept in simple terms suitable for beginners.',
+        inputParams: { audience: 'beginners', examples: true }
+    },
+    {
+        id: '5',
+        date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+        prompt: 'Review the code for security vulnerabilities and best practices.',
+        inputParams: { severity: 'all', includeRecommendations: true }
+    },
+    {
+        id: '6',
+        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+        prompt: 'Create documentation for the API endpoint with examples.',
+        inputParams: { format: 'markdown', includeExamples: true }
+    },
+    {
+        id: '7',
+        date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
+        prompt: 'Refactor the code to follow SOLID principles.',
+        inputParams: { language: 'TypeScript', strictMode: true }
+    },
+    {
+        id: '8',
+        date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 14 days ago
+        prompt: 'Design a database schema for the given requirements.',
+        inputParams: { dbType: 'PostgreSQL', normalized: true }
+    },
+    {
+        id: '9',
+        date: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000), // 20 days ago
+        prompt: 'Optimize the algorithm for better time complexity.',
+        inputParams: { targetComplexity: 'O(n log n)', spaceConstraints: false }
+    },
+    {
+        id: '10',
+        date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+        prompt: 'Compare different approaches and recommend the best solution.',
+        inputParams: { criteria: 'performance', includeTradeoffs: true }
+    }
+];
 
 export default function PlaygroundPage() {
     const params = useParams();
@@ -16,6 +81,8 @@ export default function PlaygroundPage() {
     const [inputParams, setInputParams] = useState<Record<string, any>>({});
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<string | null>(null);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(true);
+    const [isHistoryClosing, setIsHistoryClosing] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     /**
@@ -89,6 +156,29 @@ export default function PlaygroundPage() {
         setInputParams(prev => ({ ...prev, [key]: value }));
     };
 
+    /**
+     * Load a previous session
+     */
+    const loadSession = (session: PlaygroundSession) => {
+        setPrompt(session.prompt);
+        setInputParams(session.inputParams);
+    };
+
+    /**
+     * Toggle history panel
+     */
+    const toggleHistory = () => {
+        if (isHistoryOpen) {
+            setIsHistoryClosing(true);
+            setTimeout(() => {
+                setIsHistoryClosing(false);
+                setIsHistoryOpen(false);
+            }, 300);
+        } else {
+            setIsHistoryOpen(true);
+        }
+    };
+
     return (
         <div className="max-w-5xl">
             {/* Header */}
@@ -102,12 +192,23 @@ export default function PlaygroundPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
                 </button>
-                <div>
+                <div className="flex-1">
                     <div className="text-xl font-bold">
-                        <span className="text-cyan-400">Playground |</span> {taskId}
+                        <span className="text-cyan-400">Playground |</span> {agent?.name}
                     </div>
                     <p className="text-xs text-gray-500">Test custom prompts with this agent</p>
                 </div>
+                <Button
+                    onClick={toggleHistory}
+                    variant="secondary"
+                    icon={
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    }
+                >
+                    History
+                </Button>
             </div>
 
             {/* Playground Content */}
@@ -115,21 +216,19 @@ export default function PlaygroundPage() {
                 {/* Left Column - Prompt Input */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Prompt Input Section */}
-                    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                        <h3 className="text-base font-semibold text-gray-900 mb-4">Custom Prompt</h3>
+                    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 mb-2">Custom Prompt</h3>
                         <p className="text-xs text-gray-500 mb-4">
-                            Enter a prompt that will override the agent's default prompt for this test
+                            Test alternative prompts with the agent. Use the input parameters defined on the right.
                         </p>
                         
-                        <textarea
-                            ref={textareaRef}
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            placeholder="Enter your custom prompt here..."
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent resize-none font-mono text-sm min-h-[120px] max-h-[500px] overflow-y-auto"
-                        />
-
-                        <div className="mt-4 flex justify-end">
+                    <textarea
+                        ref={textareaRef}
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="Enter your custom prompt here..."
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent resize-none font-mono text-sm min-h-[120px] max-h-[500px] overflow-y-auto"
+                    />                        <div className="mt-4 flex justify-end">
                             <Button
                                 onClick={testPrompt}
                                 disabled={!prompt.trim() || isLoading}
@@ -167,6 +266,15 @@ export default function PlaygroundPage() {
                     />
                 </div>
             </div>
+
+            {/* Session History Panel */}
+            <SessionHistoryPanel
+                sessions={MOCK_SESSIONS}
+                onSelectSession={loadSession}
+                isOpen={isHistoryOpen}
+                isClosing={isHistoryClosing}
+                onClose={toggleHistory}
+            />
         </div>
     );
 }
