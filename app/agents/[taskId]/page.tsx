@@ -1,6 +1,7 @@
 'use client';
 
 import { AgentDefinition, GaleBrokerAPI } from "@/api/GaleBrokerAPI";
+import Button from "@/components/Button";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SchemaViewer } from "../components/SchemaViewer";
@@ -63,6 +64,22 @@ export default function AgentDetailPage() {
                     </div>
                     <p className="text-xs text-gray-500">{agent.description}</p>
                 </div>
+            </div>
+
+            {/* Playground Button */}
+            <div className="mb-6">
+                <Button
+                    onClick={() => router.push(`/agents/${encodeURIComponent(taskId)}/playground`)}
+                    variant="secondary"
+                    icon={
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    }
+                >
+                    Open Playground
+                </Button>
             </div>
 
             <div className="space-y-6">
