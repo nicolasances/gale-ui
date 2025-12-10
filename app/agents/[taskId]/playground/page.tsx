@@ -165,6 +165,18 @@ export default function PlaygroundPage() {
     };
 
     /**
+     * Save the current session
+     */
+    const saveSession = async () => {
+        // TODO: Integrate with API
+        // const response = await new GaleBrokerAPI().savePlaygroundSession(taskId, prompt, inputParams);
+        
+        // Mock save for now
+        console.log('Saving session:', { prompt, inputParams });
+        // Could show a toast notification here
+    };
+
+    /**
      * Toggle history panel
      */
     const toggleHistory = () => {
@@ -198,17 +210,29 @@ export default function PlaygroundPage() {
                     </div>
                     <p className="text-xs text-gray-500">Test custom prompts with this agent</p>
                 </div>
-                <Button
-                    onClick={toggleHistory}
-                    variant="secondary"
-                    icon={
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={saveSession}
+                        disabled={!prompt.trim()}
+                        variant="primary"
+                        icon={
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                            </svg>
+                        }
+                    >
+                        Save
+                    </Button>
+                    <button
+                        onClick={toggleHistory}
+                        className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors flex items-center gap-2"
+                    >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                    }
-                >
-                    History
-                </Button>
+                        History
+                    </button>
+                </div>
             </div>
 
             {/* Playground Content */}
