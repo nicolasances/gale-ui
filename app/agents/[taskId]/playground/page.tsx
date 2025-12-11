@@ -6,6 +6,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import InputParameters from "./components/InputParameters";
 import SessionHistoryPanel, { PlaygroundSession } from "./components/SessionHistoryPanel";
+import { AgentPlaygroundAPI } from "@/api/AgentsAPI";
+import JsonView from "@uiw/react-json-view";
+import { lightTheme } from "@uiw/react-json-view/light";
 
 // Mock data for previous sessions
 const MOCK_SESSIONS: PlaygroundSession[] = [
@@ -80,7 +83,7 @@ export default function PlaygroundPage() {
     const [prompt, setPrompt] = useState('');
     const [inputParams, setInputParams] = useState<Record<string, any>>({});
     const [isLoading, setIsLoading] = useState(false);
-    const [result, setResult] = useState<string | null>(null);
+    const [result, setResult] = useState<any | null>(null);
     const [isHistoryOpen, setIsHistoryOpen] = useState(true);
     const [isHistoryClosing, setIsHistoryClosing] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -92,7 +95,7 @@ export default function PlaygroundPage() {
         try {
             const response = await new GaleBrokerAPI().getAgent(taskId);
             setAgent(response.agent);
-            
+
             // Initialize input params with default values based on schema
             if (response.agent.inputSchema?.properties) {
                 const defaultParams: Record<string, any> = {};
@@ -126,20 +129,21 @@ export default function PlaygroundPage() {
     }, [prompt]);
 
     /**
-     * Tests the agent with the provided custom prompt
+     * Tests the agent with the provided custom prompt and agent input parameters.
      */
     const testPrompt = async () => {
+
         setIsLoading(true);
         setResult(null);
 
         try {
-            // TODO: Integrate with API
-            // const response = await new GaleBrokerAPI().testAgentPrompt(taskId, prompt, inputParams);
-            // setResult(response.result);
 
-            // Placeholder for now
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setResult('Test result will appear here');
+            // 1. Invoke the Agent
+            const response = await new AgentPlaygroundAPI(agent!).sendPrompt(prompt, inputParams);
+
+            // 2. Display the response
+            setResult(response);
+
 
         } catch (error) {
             console.error('Failed to test prompt:', error);
@@ -170,7 +174,7 @@ export default function PlaygroundPage() {
     const saveSession = async () => {
         // TODO: Integrate with API
         // const response = await new GaleBrokerAPI().savePlaygroundSession(taskId, prompt, inputParams);
-        
+
         // Mock save for now
         console.log('Saving session:', { prompt, inputParams });
         // Could show a toast notification here
@@ -245,14 +249,14 @@ export default function PlaygroundPage() {
                         <p className="text-xs text-gray-500 mb-4">
                             Test alternative prompts with the agent. Use the input parameters defined on the right.
                         </p>
-                        
-                    <textarea
-                        ref={textareaRef}
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Enter your custom prompt here..."
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent resize-none font-mono text-sm min-h-[120px] max-h-[500px] overflow-y-auto"
-                    />                        <div className="mt-4 flex justify-end">
+
+                        <textarea
+                            ref={textareaRef}
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder="Enter your custom prompt here..."
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent resize-none font-mono text-sm min-h-[120px] max-h-[500px] overflow-y-auto"
+                        />                        <div className="mt-4 flex justify-end">
                             <Button
                                 onClick={testPrompt}
                                 disabled={!prompt.trim() || isLoading}
@@ -267,14 +271,21 @@ export default function PlaygroundPage() {
                     {(result || isLoading) && (
                         <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                             <h3 className="text-base font-semibold text-gray-900 mb-4">Result</h3>
-                            
+
                             {isLoading ? (
                                 <div className="flex items-center justify-center py-12">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
                                 </div>
                             ) : (
                                 <div className="bg-gray-50 rounded-lg p-4 font-mono text-sm whitespace-pre-wrap">
-                                    {result}
+                                    {result && (
+                                        <JsonView
+                                            value={result}
+                                            style={lightTheme}
+                                            displayDataTypes={false}
+                                            enableClipboard={true}
+                                        />)
+                                    }
                                 </div>
                             )}
                         </div>
