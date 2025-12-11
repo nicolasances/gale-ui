@@ -11,22 +11,6 @@ import JsonView from "@uiw/react-json-view";
 import { lightTheme } from "@uiw/react-json-view/light";
 import { GalePlaygroundAPI, GalePlaygroundExperiment } from "@/api/GalePlaygroundAPI";
 
-// Mock data for previous sessions
-const MOCK_SESSIONS: GalePlaygroundExperiment[] = [
-    {
-        agentId: 'agent-123',
-        date: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-        playground: { promptOverride: 'You are a helpful assistant that provides concise answers about programming topics.' },
-        taskInputData: { topic: 'JavaScript', difficulty: 'intermediate' }
-    },
-    {
-        agentId: 'agent-123',
-        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-        playground: { promptOverride: 'Analyze the following code and suggest improvements with a focus on performance.' },
-        taskInputData: { language: 'Python', maxSuggestions: 5 }
-    },
-];
-
 export default function PlaygroundPage() {
     const params = useParams();
     const router = useRouter();
@@ -40,7 +24,7 @@ export default function PlaygroundPage() {
     const [isHistoryOpen, setIsHistoryOpen] = useState(true);
     const [isHistoryClosing, setIsHistoryClosing] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const [experiments, setExperiments] = useState<GalePlaygroundExperiment[]>(MOCK_SESSIONS);
+    const [experiments, setExperiments] = useState<GalePlaygroundExperiment[]>([]);
 
     /**
      * Load agent manifest
@@ -49,6 +33,8 @@ export default function PlaygroundPage() {
         try {
             const response = await new GaleBrokerAPI().getAgent(taskId);
             setAgent(response.agent);
+
+            loadAgentExperiments(response.agent.id);
 
             // Initialize input params with default values based on schema
             if (response.agent.inputSchema?.properties) {
@@ -62,6 +48,16 @@ export default function PlaygroundPage() {
             console.error('Failed to load agent:', error);
         }
     };
+
+    /**
+     * Loads the experiments for the current agent
+     */
+    const loadAgentExperiments = async (agentId: string) => {
+
+        const { experiments } = await new GalePlaygroundAPI().getAgentExperiments(agentId);
+
+        setExperiments(experiments);
+    }
 
     useEffect(() => {
         loadAgent();
@@ -131,13 +127,13 @@ export default function PlaygroundPage() {
 
         const experiment: GalePlaygroundExperiment = {
             date: new Date(),
-            agentId: agent.id, 
-            taskInputData: inputParams, 
+            agentId: agent.id,
+            taskInputData: inputParams,
             playground: { promptOverride: prompt }
         };
 
         console.log(experiment);
-        
+
 
         await new GalePlaygroundAPI().saveExperiment(experiment)
 
@@ -162,7 +158,7 @@ export default function PlaygroundPage() {
     };
 
     return (
-        <div className="max-w-5xl">
+        <div className={`w-full transition-all duration-300 ${isHistoryOpen ? 'pr-96' : ''}`}>
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
                 <button
@@ -206,9 +202,9 @@ export default function PlaygroundPage() {
             </div>
 
             {/* Playground Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="flex flex-col lg:flex-row gap-6">
                 {/* Left Column - Prompt Input */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="flex-1 space-y-6">
                     {/* Prompt Input Section */}
                     <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                         <h3 className="text-base font-semibold text-gray-900 mb-2">Custom Prompt</h3>
@@ -259,7 +255,7 @@ export default function PlaygroundPage() {
                 </div>
 
                 {/* Right Column - Input Parameters */}
-                <div className="lg:col-span-1">
+                <div className="w-full lg:w-80">
                     <InputParameters
                         agent={agent}
                         inputParams={inputParams}
