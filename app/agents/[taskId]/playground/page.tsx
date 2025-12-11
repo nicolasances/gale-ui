@@ -159,7 +159,7 @@ export default function PlaygroundPage() {
     };
 
     return (
-        <div className={`w-full transition-all duration-300 ${isHistoryOpen ? 'pr-96' : ''}`}>
+        <div className={`w-full transition-all duration-300 ${isHistoryOpen ? '2xl:pr-96' : ''}`}>
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
                 <button
