@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import InputParameters from "./components/InputParameters";
 import SessionHistoryPanel from "./components/SessionHistoryPanel";
+import AgentInfoBox from "./components/AgentInfoBox";
 import { AgentPlaygroundAPI } from "@/api/AgentsAPI";
 import JsonView from "@uiw/react-json-view";
 import { lightTheme } from "@uiw/react-json-view/light";
@@ -201,8 +202,11 @@ export default function PlaygroundPage() {
                 </div>
             </div>
 
+            {/* Agent Info Box */}
+            <AgentInfoBox agent={agent} />
+
             {/* Playground Content */}
-            <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex flex-col lg:flex-row gap-6 mt-6">
                 {/* Left Column - Prompt Input */}
                 <div className="flex-1 space-y-6">
                     {/* Prompt Input Section */}

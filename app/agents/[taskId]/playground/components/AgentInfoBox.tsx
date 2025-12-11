@@ -1,0 +1,32 @@
+'use client';
+
+import { AgentDefinition } from "@/api/GaleBrokerAPI";
+
+interface AgentInfoBoxProps {
+    agent: AgentDefinition | null;
+}
+
+/**
+ * Displays key information about the agent
+ */
+export default function AgentInfoBox({ agent }: AgentInfoBoxProps) {
+    if (!agent) return null;
+
+    return (
+        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Description */}
+                <div>
+                    <p className="text-xs text-gray-500 mb-1">Description</p>
+                    <p className="text-sm text-gray-900">{agent.description}</p>
+                </div>
+
+                {/* Endpoint */}
+                <div>
+                    <p className="text-xs text-gray-500 mb-1">Endpoint</p>
+                    <p className="font-mono text-sm text-gray-900">{agent.endpoint.baseURL}</p>
+                </div>
+            </div>
+        </div>
+    );
+}
