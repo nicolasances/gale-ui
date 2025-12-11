@@ -5,73 +5,26 @@ import Button from "@/components/Button";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import InputParameters from "./components/InputParameters";
-import SessionHistoryPanel, { PlaygroundSession } from "./components/SessionHistoryPanel";
+import SessionHistoryPanel from "./components/SessionHistoryPanel";
 import { AgentPlaygroundAPI } from "@/api/AgentsAPI";
 import JsonView from "@uiw/react-json-view";
 import { lightTheme } from "@uiw/react-json-view/light";
+import { GalePlaygroundAPI, GalePlaygroundExperiment } from "@/api/GalePlaygroundAPI";
 
 // Mock data for previous sessions
-const MOCK_SESSIONS: PlaygroundSession[] = [
+const MOCK_SESSIONS: GalePlaygroundExperiment[] = [
     {
-        id: '1',
+        agentId: 'agent-123',
         date: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-        prompt: 'You are a helpful assistant that provides concise answers about programming topics.',
-        inputParams: { topic: 'JavaScript', difficulty: 'intermediate' }
+        playground: { promptOverride: 'You are a helpful assistant that provides concise answers about programming topics.' },
+        taskInputData: { topic: 'JavaScript', difficulty: 'intermediate' }
     },
     {
-        id: '2',
+        agentId: 'agent-123',
         date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-        prompt: 'Analyze the following code and suggest improvements with a focus on performance.',
-        inputParams: { language: 'Python', maxSuggestions: 5 }
+        playground: { promptOverride: 'Analyze the following code and suggest improvements with a focus on performance.' },
+        taskInputData: { language: 'Python', maxSuggestions: 5 }
     },
-    {
-        id: '3',
-        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-        prompt: 'Generate unit tests for the provided function with edge cases.',
-        inputParams: { framework: 'Jest', coverage: 'high' }
-    },
-    {
-        id: '4',
-        date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-        prompt: 'Explain the concept in simple terms suitable for beginners.',
-        inputParams: { audience: 'beginners', examples: true }
-    },
-    {
-        id: '5',
-        date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
-        prompt: 'Review the code for security vulnerabilities and best practices.',
-        inputParams: { severity: 'all', includeRecommendations: true }
-    },
-    {
-        id: '6',
-        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-        prompt: 'Create documentation for the API endpoint with examples.',
-        inputParams: { format: 'markdown', includeExamples: true }
-    },
-    {
-        id: '7',
-        date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
-        prompt: 'Refactor the code to follow SOLID principles.',
-        inputParams: { language: 'TypeScript', strictMode: true }
-    },
-    {
-        id: '8',
-        date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 14 days ago
-        prompt: 'Design a database schema for the given requirements.',
-        inputParams: { dbType: 'PostgreSQL', normalized: true }
-    },
-    {
-        id: '9',
-        date: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000), // 20 days ago
-        prompt: 'Optimize the algorithm for better time complexity.',
-        inputParams: { targetComplexity: 'O(n log n)', spaceConstraints: false }
-    },
-    {
-        id: '10',
-        date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-        prompt: 'Compare different approaches and recommend the best solution.',
-        inputParams: { criteria: 'performance', includeTradeoffs: true }
-    }
 ];
 
 export default function PlaygroundPage() {
@@ -87,6 +40,7 @@ export default function PlaygroundPage() {
     const [isHistoryOpen, setIsHistoryOpen] = useState(true);
     const [isHistoryClosing, setIsHistoryClosing] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [experiments, setExperiments] = useState<GalePlaygroundExperiment[]>(MOCK_SESSIONS);
 
     /**
      * Load agent manifest
@@ -163,21 +117,33 @@ export default function PlaygroundPage() {
     /**
      * Load a previous session
      */
-    const loadSession = (session: PlaygroundSession) => {
-        setPrompt(session.prompt);
-        setInputParams(session.inputParams);
+    const loadSession = (session: GalePlaygroundExperiment) => {
+        setPrompt(session.playground.promptOverride || '');
+        setInputParams(session.taskInputData);
     };
 
     /**
-     * Save the current session
+     * Save the current session (experiment)
      */
     const saveSession = async () => {
-        // TODO: Integrate with API
-        // const response = await new GaleBrokerAPI().savePlaygroundSession(taskId, prompt, inputParams);
 
-        // Mock save for now
-        console.log('Saving session:', { prompt, inputParams });
-        // Could show a toast notification here
+        if (!agent) return;
+
+        const experiment: GalePlaygroundExperiment = {
+            date: new Date(),
+            agentId: agent.id, 
+            taskInputData: inputParams, 
+            playground: { promptOverride: prompt }
+        };
+
+        console.log(experiment);
+        
+
+        await new GalePlaygroundAPI().saveExperiment(experiment)
+
+        // For now, just add to local state
+        setExperiments(prev => [experiment, ...prev]);
+
     };
 
     /**
@@ -304,7 +270,7 @@ export default function PlaygroundPage() {
 
             {/* Session History Panel */}
             <SessionHistoryPanel
-                sessions={MOCK_SESSIONS}
+                sessions={experiments}
                 onSelectSession={loadSession}
                 isOpen={isHistoryOpen}
                 isClosing={isHistoryClosing}

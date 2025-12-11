@@ -1,15 +1,10 @@
 'use client';
 
-export interface PlaygroundSession {
-    id: string;
-    date: Date;
-    prompt: string;
-    inputParams: Record<string, any>;
-}
+import { GalePlaygroundExperiment } from "@/api/GalePlaygroundAPI";
 
 interface SessionHistoryPanelProps {
-    sessions: PlaygroundSession[];
-    onSelectSession: (session: PlaygroundSession) => void;
+    sessions: GalePlaygroundExperiment[];
+    onSelectSession: (session: GalePlaygroundExperiment) => void;
     isOpen: boolean;
     isClosing: boolean;
     onClose: () => void;
@@ -61,7 +56,7 @@ export default function SessionHistoryPanel({ sessions, onSelectSession, isOpen,
                 <div className="space-y-2">
                     {sessions.map((session) => (
                         <button
-                            key={session.id}
+                            key={Math.random()}
                             onClick={() => {
                                 onSelectSession(session);
                             }}
@@ -69,18 +64,18 @@ export default function SessionHistoryPanel({ sessions, onSelectSession, isOpen,
                         >
                             <div className="flex items-center justify-between mb-1">
                                 <span className="text-sm font-semibold text-gray-900 group-hover:text-cyan-600">
-                                    {formatDate(session.date)}
+                                    {formatDate(new Date(session.date))}
                                 </span>
                                 <span className="text-xs text-gray-500">
-                                    {formatTime(session.date)}
+                                    {formatTime(new Date(session.date))}
                                 </span>
                             </div>
                             <div className="text-xs text-gray-600 line-clamp-2 font-mono">
-                                {session.prompt || 'No prompt'}
+                                {session.playground.promptOverride || 'No prompt'}
                             </div>
                             <div className="flex items-center gap-2 mt-2">
                                 <span className="text-xs text-gray-500">
-                                    {Object.keys(session.inputParams).length} params
+                                    {Object.keys(session.taskInputData).length} params
                                 </span>
                             </div>
                         </button>

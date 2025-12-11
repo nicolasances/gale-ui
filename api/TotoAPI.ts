@@ -34,6 +34,7 @@ export class TotoAPI {
       options.headers['Accept'] = 'application/json';
       options.headers['x-correlation-id'] = cid();
       options.headers['Authorization'] = 'Bearer ' + idToken;
+      options.headers['Content-Type'] = 'application/json';
 
       if (aws) options.headers['toto-service'] = api;
     }

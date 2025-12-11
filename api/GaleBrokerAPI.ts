@@ -113,6 +113,7 @@ interface GetTaskExecutionRecordResponse {
 }
 
 export interface AgentDefinition {
+    id: string; // The unique identifier of the Agent (i.e. DB ID)
     name: string; // The name of the Agent.
     description: string; // The description of the Agent.
     taskId: string; // The unique identifier of the type of task this Agent can execute.
