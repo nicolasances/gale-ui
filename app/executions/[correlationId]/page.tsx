@@ -21,6 +21,7 @@ import 'reactflow/dist/style.css';
 import { TaskNodeComponent, NODE_WIDTH } from "./components/TaskNode";
 import { TaskDataPopup } from "./components/TaskData";
 import NodeDetailPanel from "./components/NodeDetailPanel";
+import Button from "@/components/Button";
 import { AGENTS_PER_ROW, GROUP_WIDTH, SubgroupData, SubgroupTasksNodeComponent } from "./components/SubgroupTasksNode";
 import { AbstractNode, AgentNode, BranchNode, GroupNode } from "@/api/model/AgenticFlow";
 import { FlowGraphUtil, GraphLevels } from "./util/FlowGraphUtil";
@@ -409,16 +410,28 @@ export default function ExecutionDetailPage() {
 
     return (
         <div className="h-screen flex flex-col">
-            <div className="flex items-center gap-4 mb-6 pb-0">
-                <button onClick={() => router.back()} className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" title="Back">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
-                <div>
-                    <div className="text-xl font-bold"><span className="text-cyan-400">Flow |</span> {rootNode?.name}</div>
-                    <p className="text-xs text-gray-500">Started: {rootStatus?.startedAt ? new Date(rootStatus.startedAt).toLocaleString() : '-'}</p>
+            <div className="flex items-center justify-between mb-6 pb-0">
+                <div className="flex items-center gap-4">
+                    <button onClick={() => router.back()} className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" title="Back">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <div>
+                        <div className="text-xl font-bold"><span className="text-cyan-400">Flow |</span> {rootNode?.name}</div>
+                        <p className="text-xs text-gray-500">Started: {rootStatus?.startedAt ? new Date(rootStatus.startedAt).toLocaleString() : '-'}</p>
+                    </div>
                 </div>
+                <Button
+                    onClick={loadGraph}
+                    variant="ghost"
+                    title="Refresh"
+                    icon={
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    }
+                />
             </div>
 
             {loading ? (
