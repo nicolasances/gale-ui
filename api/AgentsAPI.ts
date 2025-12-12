@@ -1,5 +1,5 @@
 import { AgentDefinition } from "./GaleBrokerAPI";
-import { cid } from "./TotoAPI";
+import { cid, TotoAPI } from "./TotoAPI";
 import { v4 as uuidv4 } from 'uuid';
 
 import Cookies from 'universal-cookie';
@@ -33,8 +33,8 @@ export class AgentPlaygroundAPI {
                 "Authorization": `Bearer ${idToken}`
             },
             body: JSON.stringify({
-                command: { command: "start" }, 
-                taskId: this.agentDefinition.taskId, 
+                command: { command: "start" },
+                taskId: this.agentDefinition.taskId,
                 taskInstanceId: uuidv4(),
                 correlationId: correlationId,
                 taskInputData: agentInput,
@@ -46,4 +46,34 @@ export class AgentPlaygroundAPI {
 
         return fetch(`${this.agentDefinition.endpoint.baseURL}${this.agentDefinition.endpoint.executionPath}`, options).then(response => response.json());
     }
+
+    /**
+     * Retrieves detailed information about the agent from the agent /info endpoint
+     */
+    async getAgentInfo(): Promise<GetAgentInfoResponse> {
+
+        let idToken = cookies.get('user') ? cookies.get('user').idToken : null
+
+        let correlationId = cid();
+
+        const options = {
+            method: 'GET',
+            headers: {
+                "Accept": "application/json",
+                "x-correlation-id": correlationId,
+                "Authorization": `Bearer ${idToken}`
+            },
+        };
+
+        return fetch(`${this.agentDefinition.endpoint.baseURL}${this.agentDefinition.endpoint.infoPath}`, options).then(response => response.json()) as Promise<GetAgentInfoResponse>;
+    }
+}
+
+export interface GetAgentInfoResponse {
+    agentName: string;
+    description: string;
+    taskId: string;
+    inputSchema: any;
+    outputSchema: any;
+    promptTemplate?: string;
 }

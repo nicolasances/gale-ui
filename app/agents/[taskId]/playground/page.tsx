@@ -26,16 +26,20 @@ export default function PlaygroundPage() {
     const [isHistoryClosing, setIsHistoryClosing] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [experiments, setExperiments] = useState<GalePlaygroundExperiment[]>([]);
+    const [agentInfo, setAgentInfo] = useState<any>(null);
 
     /**
      * Load agent manifest
      */
     const loadAgent = async () => {
+
         try {
             const response = await new GaleBrokerAPI().getAgent(taskId);
+
             setAgent(response.agent);
 
             loadAgentExperiments(response.agent.id);
+            loadAgentInfo(response.agent);
 
             // Initialize input params with default values based on schema
             if (response.agent.inputSchema?.properties) {
@@ -49,6 +53,19 @@ export default function PlaygroundPage() {
             console.error('Failed to load agent:', error);
         }
     };
+
+    /**
+     * Retrieves agent info such as prompt template
+     * 
+     * @param agent the agent definition
+     */
+    const loadAgentInfo = async (agent: AgentDefinition) => {
+
+        const info = await new AgentPlaygroundAPI(agent).getAgentInfo(); 
+
+        setPrompt(info.promptTemplate || '');
+        setAgentInfo(info);
+    }
 
     /**
      * Loads the experiments for the current agent
@@ -175,7 +192,7 @@ export default function PlaygroundPage() {
                     <div className="text-xl font-bold">
                         <span className="text-cyan-400">Playground |</span> {agent?.name}
                     </div>
-                    <p className="text-xs text-gray-500">Test custom prompts with this agent</p>
+                    <p className="text-xs text-gray-500">Playground to test this agent with different prompts and configurations.</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button
@@ -211,9 +228,9 @@ export default function PlaygroundPage() {
                 <div className="flex-1 space-y-6">
                     {/* Prompt Input Section */}
                     <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                        <h3 className="text-base font-semibold text-gray-900 mb-2">Custom Prompt</h3>
+                        <h3 className="text-base font-semibold text-gray-900 mb-2">Agent's Prompt</h3>
                         <p className="text-xs text-gray-500 mb-4">
-                            Test alternative prompts with the agent. Use the input parameters defined on the right.
+                            {agentInfo?.promptTemplate == prompt ? (<span>This is the <span className="font-bold text-gray-900">prompt that the agent is currently using</span>. Feel free to modify it and test different variations.</span>) : 'This is your custom prompt override. If you like it better than the original, ask the Agent Developer to use this one instead.'}
                         </p>
 
                         <textarea
