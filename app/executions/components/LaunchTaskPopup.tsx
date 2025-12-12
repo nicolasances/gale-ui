@@ -1,6 +1,7 @@
 'use client';
 
 import { AgentDefinition, GaleBrokerAPI } from "@/api/GaleBrokerAPI";
+import Button from "@/components/Button";
 import { useEffect, useState } from "react";
 
 interface LaunchTaskPopupProps {
@@ -28,7 +29,7 @@ export function LaunchTaskPopup({ onClose, onTaskLaunched }: LaunchTaskPopupProp
         } catch (err) {
             setError("Failed to load agents");
             console.log(err);
-            
+
         }
     };
 
@@ -69,7 +70,7 @@ export function LaunchTaskPopup({ onClose, onTaskLaunched }: LaunchTaskPopupProp
         setError(null);
 
         try {
-            
+
             await new GaleBrokerAPI().postTask(selectedAgent.taskId, taskInputData);
 
             onTaskLaunched?.();
@@ -93,7 +94,6 @@ export function LaunchTaskPopup({ onClose, onTaskLaunched }: LaunchTaskPopupProp
     // Render input field based on schema type
     const renderInputField = (key: string, schema: any) => {
         const type = schema.type || 'string';
-        const description = schema.description || '';
 
         if (type === 'boolean') {
             return (
@@ -115,7 +115,6 @@ export function LaunchTaskPopup({ onClose, onTaskLaunched }: LaunchTaskPopupProp
                     type="number"
                     value={taskInputData[key] || ''}
                     onChange={(e) => handleInputChange(key, e.target.value, type)}
-                    placeholder={description || `Enter ${key}`}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
             );
@@ -134,7 +133,6 @@ export function LaunchTaskPopup({ onClose, onTaskLaunched }: LaunchTaskPopupProp
                             setTaskInputData(prev => ({ ...prev, [key]: e.target.value }));
                         }
                     }}
-                    placeholder={description || `Enter ${key} as JSON`}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
                     rows={4}
                 />
@@ -147,25 +145,20 @@ export function LaunchTaskPopup({ onClose, onTaskLaunched }: LaunchTaskPopupProp
                 type="text"
                 value={taskInputData[key] || ''}
                 onChange={(e) => handleInputChange(key, e.target.value, type)}
-                placeholder={description || `Enter ${key}`}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
         );
     };
 
     return (
-        <div
-            onClick={handleBackdropClick}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-        >
+        <div onClick={handleBackdropClick} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" >
+
             <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+
                 {/* Header */}
-                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-gray-900">Launch New Task</h2>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                    >
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-gray-900">Launch New Task</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors" >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -184,7 +177,7 @@ export function LaunchTaskPopup({ onClose, onTaskLaunched }: LaunchTaskPopupProp
                     {/* Agent Selection */}
                     {!selectedAgent ? (
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1 pl-2">
                                 Search for Agent
                             </label>
                             <input
@@ -192,7 +185,7 @@ export function LaunchTaskPopup({ onClose, onTaskLaunched }: LaunchTaskPopupProp
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search by agent name or task ID..."
-                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="text-base w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 autoFocus
                             />
 
@@ -200,13 +193,9 @@ export function LaunchTaskPopup({ onClose, onTaskLaunched }: LaunchTaskPopupProp
                             {searchQuery && filteredAgents.length > 0 && (
                                 <div className="mt-2 border border-gray-200 rounded-md divide-y divide-gray-200">
                                     {filteredAgents.map((agent) => (
-                                        <div
-                                            key={agent.taskId}
-                                            onClick={() => handleSelectAgent(agent)}
-                                            className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                                        >
+                                        <div key={agent.taskId} onClick={() => handleSelectAgent(agent)} className="text-base p-3 hover:bg-gray-50 cursor-pointer transition-colors" >
                                             <div className="font-semibold text-gray-900">{agent.name}</div>
-                                            <div className="text-sm text-gray-500 font-mono">{agent.taskId}</div>
+                                            <div className="text-xs text-gray-500 font-mono">{agent.taskId}</div>
                                             <div className="text-xs text-gray-400 mt-1">{agent.description}</div>
                                         </div>
                                     ))}
@@ -222,26 +211,22 @@ export function LaunchTaskPopup({ onClose, onTaskLaunched }: LaunchTaskPopupProp
                     ) : (
                         <div>
                             {/* Selected Agent Display */}
-                            <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
-                                <div className="flex items-start justify-between">
+                            <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-6 text-base">
+                                <div className="flex items-center justify-between">
                                     <div>
                                         <div className="font-semibold text-gray-900">{selectedAgent.name}</div>
-                                        <div className="text-sm text-gray-600 font-mono">{selectedAgent.taskId}</div>
-                                        <div className="text-xs text-gray-500 mt-1">{selectedAgent.description}</div>
+                                        <div className="text-xs text-gray-600 font-mono">{selectedAgent.taskId}</div>
                                     </div>
-                                    <button
-                                        onClick={() => setSelectedAgent(null)}
-                                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                                    >
+                                    <Button variant="secondary" onClick={() => setSelectedAgent(null)}>
                                         Change
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
 
                             {/* Dynamic Input Form */}
                             {selectedAgent.inputSchema && selectedAgent.inputSchema.properties ? (
-                                <div className="space-y-4">
-                                    <h3 className="text-sm font-semibold text-gray-700 mb-3">Task Input Data</h3>
+                                <div className="space-y-4 text-base">
+                                    <p className="text-sm font-semibold text-gray-400 border-b border-gray-200 pb-2">AGENT INPUT</p>
                                     {Object.entries(selectedAgent.inputSchema.properties).map(([key, schema]: [string, any]) => (
                                         <div key={key}>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -267,7 +252,7 @@ export function LaunchTaskPopup({ onClose, onTaskLaunched }: LaunchTaskPopupProp
                 </div>
 
                 {/* Footer */}
-                <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+                <div className="text-base sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-3 flex justify-end gap-3">
                     <button
                         onClick={onClose}
                         className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium transition-colors"
