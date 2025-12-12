@@ -4,6 +4,7 @@ import ExpandedViewPopup from "./ExpandedViewPopup";
 import { AgentNode } from "@/api/model/AgenticFlow";
 import { GaleBrokerAPI, TaskStatusRecord } from "@/api/GaleBrokerAPI";
 import CopyButton from "@/components/CopyButton";
+import Button from "@/components/Button";
 
 
 /**
@@ -29,9 +30,34 @@ export default function NodeDetailPanel({ node, onClose, isClosing }: { node: Ag
         return `${(ms / 1000).toFixed(2)}s`;
     };
 
+    /**
+     * Get the task execution record related to this node.
+     * 
+     * @param taskInstanceId 
+     */
     const getTaskExecutionRecord = async (taskInstanceId: string) => {
         const result = await new GaleBrokerAPI().getTaskExecutionRecord(taskInstanceId);
         setTaskDetails(result.task);
+    }
+
+    /**
+     * Redirects to the playground page with the agent and input loaded.
+     * 
+     * The input part is important: the whole idea is to easily load the node's input, which can be sometimes complex so that the user
+     * can test variations of the prompt in the playground without having to manually input complex JSON structures.
+     */
+    const loadInPlayground = () => {
+        if (!node.taskId || !taskDetails?.taskInput) return;
+
+        // Store the input data in sessionStorage to pass to the playground
+        sessionStorage.setItem('playgroundPrefilledInput', JSON.stringify({
+            taskId: node.taskId,
+            inputParams: taskDetails.taskInput,
+            timestamp: Date.now()
+        }));
+
+        // Navigate to the playground page
+        window.location.href = `/agents/${encodeURIComponent(node.taskId)}/playground`;
     }
 
     useEffect(() => { getTaskExecutionRecord(node.taskInstanceId); }, [node.taskInstanceId]);
@@ -54,40 +80,51 @@ export default function NodeDetailPanel({ node, onClose, isClosing }: { node: Ag
 
             {/* Content */}
             <div className="p-4">
-                <div className="space-y-2">
+                <div className="space-y-1">
                     {/* Agent Name */}
                     <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
                         <label className="text-xs font-semibold text-gray-500 uppercase block">Agent Name</label>
                         <div className="mt-1 text-sm text-gray-900 font-medium">{node.name || '-'}</div>
+                        <div className="mt-1 text-xs text-gray-900 font-mono break-all">
+                            {node.taskId || '-'}
+                        </div>
                     </div>
 
                     {/* Task Instance ID */}
                     <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <label className="text-xs font-semibold text-gray-500 uppercase block">Task</label>
-                        <div className="mt-1 text-xs text-gray-900 font-mono break-all">
-                            {node.taskId || '-'}
-                        </div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase block">Task Instance Id</label>
                         <div className="mt-1 text-xs text-gray-900 font-mono break-all flex items-center gap-2">
                             <span className="mr-1">{node.taskInstanceId || '-'}</span>
                             {node.taskInstanceId && <CopyButton textToCopy={node.taskInstanceId} />}
                         </div>
                     </div>
 
-                    {/* Status */}
-                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <label className="text-xs font-semibold text-gray-500 uppercase block">Status</label>
-                        <div className="mt-2 flex items-center">
-                            <StatusBadge status={node.status} />
-                            <span className="ml-2 text-sm text-gray-700">{node.status}</span>
+                    {/* Status and Execution Time */}
+                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs font-semibold text-gray-500 uppercase block">Status</label>
+                            <div className="mt-2 flex items-center">
+                                <StatusBadge status={node.status} />
+                                <span className="ml-2 text-sm text-gray-700">{node.status}</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-semibold text-gray-500 uppercase block">Execution Time</label>
+                            <div className="mt-2 text-sm text-gray-900 font-medium">
+                                {formatExecutionTime()}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Execution Time */}
-                    <div className="px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <label className="text-xs font-semibold text-gray-500 uppercase block">Execution Time</label>
-                        <div className="mt-1 text-sm text-gray-900 font-medium">
-                            {formatExecutionTime()}
-                        </div>
+                    <div className="px-4 py-3">
+                        <Button 
+                            variant="primary"
+                            onClick={loadInPlayground}
+                            disabled={!node.taskId || !taskDetails?.taskInput}
+                        >
+                            Load in Playground
+                        </Button>
                     </div>
 
                     {/* Node Input */}

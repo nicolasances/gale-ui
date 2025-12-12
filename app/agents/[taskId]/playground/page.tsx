@@ -29,6 +29,32 @@ export default function PlaygroundPage() {
     const [agentInfo, setAgentInfo] = useState<any>(null);
 
     /**
+     * Load pre-filled input from sessionStorage if available
+     * This is used when navigating from an execution node to test it in the playground
+     * Returns the pre-filled input params or null if not available
+     */
+    const loadPrefilledInput = (): Record<string, any> | null => {
+        
+        const storedData = sessionStorage.getItem('playgroundPrefilledInput');
+        
+        if (storedData) {
+            const { taskId: storedTaskId, inputParams: storedInputParams, timestamp } = JSON.parse(storedData);
+            
+            // Only load if it's for the current agent and was stored recently (within 5 minutes)
+            const isRecent = Date.now() - timestamp < 5 * 60 * 1000;
+            
+            if (storedTaskId === taskId && isRecent) {
+                // Clear the storage after loading to avoid confusion on subsequent visits
+                sessionStorage.removeItem('playgroundPrefilledInput');
+                
+                return storedInputParams;
+            }
+        }
+
+        return null;
+    };
+
+    /**
      * Load agent manifest
      */
     const loadAgent = async () => {
@@ -41,8 +67,15 @@ export default function PlaygroundPage() {
             loadAgentExperiments(response.agent.id);
             loadAgentInfo(response.agent);
 
-            // Initialize input params with default values based on schema
-            if (response.agent.inputSchema?.properties) {
+            // Check for pre-filled input first
+            const prefilledInput = loadPrefilledInput();
+            
+            // If the input is prefilled from a session (e.g. from the execution node in Executions, when one clicks on "Load in Playground"), use it
+            if (prefilledInput) {
+                setInputParams(prefilledInput);
+            } 
+            else if (response.agent.inputSchema?.properties) {
+                // Initialize input params with default values based on schema
                 const defaultParams: Record<string, any> = {};
                 Object.keys(response.agent.inputSchema.properties).forEach(key => {
                     defaultParams[key] = '';

@@ -37,7 +37,55 @@ export default function InputParameters({ agent, inputParams, onUpdateParam }: I
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent text-sm"
                 />
             );
-        } else {
+        } 
+        // If the property is a JSON object or array, render a textarea for JSON input
+        else if (type === 'object' || type === 'array') {
+            let jsonValue = '';
+            
+            // Handle different types of values
+            if (inputParams[key] === undefined || inputParams[key] === null) {
+                jsonValue = '';
+            } else if (typeof inputParams[key] === 'string') {
+                // If already a string, try to parse and re-stringify for formatting
+                try {
+                    const parsed = JSON.parse(inputParams[key]);
+                    jsonValue = JSON.stringify(parsed, null, 2);
+                } catch {
+                    // If not valid JSON, use as-is
+                    jsonValue = inputParams[key];
+                }
+            } else if (typeof inputParams[key] === 'object') {
+                // If it's an object or array, stringify it
+                jsonValue = JSON.stringify(inputParams[key], null, 2);
+            } else {
+                jsonValue = String(inputParams[key]);
+            }
+            
+            return (
+                <textarea
+                    value={jsonValue}
+                    onChange={(e) => {
+                        const value = e.target.value.trim();
+                        if (!value) {
+                            onUpdateParam(key, null);
+                            return;
+                        }
+                        
+                        try {
+                            // Try to parse the JSON
+                            const parsed = JSON.parse(value);
+                            onUpdateParam(key, parsed);
+                        } catch (error) {
+                            // If invalid JSON, store as string temporarily
+                            onUpdateParam(key, value);
+                        }
+                    }}
+                    placeholder={type === 'array' ? '[{"key": "value"}]' : '{"key": "value"}'}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent text-sm font-mono min-h-[100px] resize-y"
+                />
+            );
+        }
+        else {
             return (
                 <input
                     type="text"
