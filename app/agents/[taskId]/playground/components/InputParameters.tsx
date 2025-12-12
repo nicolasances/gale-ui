@@ -78,6 +78,7 @@ export default function InputParameters({ agent, inputParams, onUpdateParam }: I
                             onUpdateParam(key, parsed);
                         } catch (error) {
                             // If invalid JSON, store as string temporarily
+                            console.log(error);
                             onUpdateParam(key, value);
                         }
                     }}

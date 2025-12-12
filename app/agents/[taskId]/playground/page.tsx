@@ -34,7 +34,7 @@ export default function PlaygroundPage() {
      * Returns the pre-filled input params or null if not available
      */
     const loadPrefilledInput = (): Record<string, any> | null => {
-        
+
         const storedData = sessionStorage.getItem('playgroundPrefilledInput');
         
         if (storedData) {
@@ -261,7 +261,7 @@ export default function PlaygroundPage() {
                 <div className="flex-1 space-y-6">
                     {/* Prompt Input Section */}
                     <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                        <h3 className="text-base font-semibold text-gray-900 mb-2">Agent's Prompt</h3>
+                        <h3 className="text-base font-semibold text-gray-900 mb-2">Agent Prompt</h3>
                         <p className="text-xs text-gray-500 mb-4">
                             {agentInfo?.promptTemplate == prompt ? (<span>This is the <span className="font-bold text-gray-900">prompt that the agent is currently using</span>. Feel free to modify it and test different variations.</span>) : 'This is your custom prompt override. If you like it better than the original, ask the Agent Developer to use this one instead.'}
                         </p>
