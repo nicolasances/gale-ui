@@ -28,11 +28,12 @@ export default function InputParameters({ agent, inputParams, onUpdateParam }: I
                     className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
                 />
             );
-        } else if (type === 'number' || type === 'integer') {
+        } 
+        else if (type === 'number' || type === 'integer') {
             return (
                 <input
                     type="number"
-                    value={inputParams[key] || ''}
+                    value={inputParams[key] ?? ''}
                     onChange={(e) => onUpdateParam(key, e.target.valueAsNumber)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent text-sm"
                 />
