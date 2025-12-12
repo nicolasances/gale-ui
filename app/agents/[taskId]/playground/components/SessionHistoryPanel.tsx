@@ -17,13 +17,16 @@ export default function SessionHistoryPanel({ sessions, onSelectSession, isOpen,
 
     const formatDate = (date: Date) => {
         const now = new Date();
-        const diffMs = now.getTime() - date.getTime();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        
+        const diffMs = today.getTime() - targetDate.getTime();
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
         if (diffDays === 0) return 'Today';
         if (diffDays === 1) return 'Yesterday';
         if (diffDays < 7) return `${diffDays} days ago`;
-        
+
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
@@ -52,14 +55,12 @@ export default function SessionHistoryPanel({ sessions, onSelectSession, isOpen,
             {/* Content */}
             <div className="p-4">
                 <p className="text-xs text-gray-500 mb-4">Previous playground sessions for this agent</p>
-                
+
                 <div className="space-y-2">
                     {sessions.map((session) => (
                         <button
                             key={Math.random()}
-                            onClick={() => {
-                                onSelectSession(session);
-                            }}
+                            onClick={() => { onSelectSession(session); }}
                             className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-cyan-400 transition-all text-left group"
                         >
                             <div className="flex items-center justify-between mb-1">
