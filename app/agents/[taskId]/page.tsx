@@ -5,6 +5,7 @@ import Button from "@/components/Button";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SchemaViewer } from "../components/SchemaViewer";
+import CopyButton from "@/components/CopyButton";
 
 export default function AgentDetailPage() {
     const params = useParams();
@@ -17,7 +18,7 @@ export default function AgentDetailPage() {
     const loadAgent = async () => {
 
         setLoading(true);
-        
+
         try {
             const response = await new GaleBrokerAPI().getAgent(taskId);
             setAgent(response.agent);
@@ -88,13 +89,27 @@ export default function AgentDetailPage() {
                     <h3 className="text-base font-semibold text-gray-900 mb-4">Properties</h3>
                     <div className="grid grid-cols-1 gap-4">
                         <div>
-                            <p className="text-xs text-gray-500 mb-1">Task ID</p>
-                            <p className="font-mono text-sm font-semibold text-gray-900">{agent.taskId}</p>
+                            <p className="text-xs text-gray-500 mb-1">Name</p>
+                            <p className="text-sm text-gray-900">{agent.name}</p>
+                            <p className="text-sm text-gray-900 mt-2 mb-2">{agent.description}</p>
+                        </div>
+                        <div className="flex gap-8">
+                            <div>
+                                <p className="text-xs text-gray-500 mb-1">Task ID</p>
+                                <p className="font-mono text-sm font-semibold text-gray-900">{agent.taskId}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 mb-1">ID</p>
+                                <p className="font-mono text-sm text-gray-900 gap-2 flex items-center">
+                                    <span>{agent.id}</span>
+                                    <CopyButton textToCopy={agent.id} />
+                                </p>
+                            </div>
                         </div>
                         <div>
                             <p className="text-xs text-gray-500 mb-1">Endpoint</p>
                             <div className="space-y-1">
-                                <p className="font-mono text-sm text-gray-900">
+                                <p className="font-mono text-sm text-blue-600">
                                     <span className="text-gray-500">Base URL:</span> {agent.endpoint.baseURL}
                                 </p>
                                 <p className="font-mono text-sm text-gray-900">
@@ -104,14 +119,6 @@ export default function AgentDetailPage() {
                                     <span className="text-gray-500">Info Path:</span> {agent.endpoint.infoPath}
                                 </p>
                             </div>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-500 mb-1">Name</p>
-                            <p className="text-sm text-gray-900">{agent.name}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-500 mb-1">Description</p>
-                            <p className="text-sm text-gray-900">{agent.description}</p>
                         </div>
                     </div>
                 </div>
