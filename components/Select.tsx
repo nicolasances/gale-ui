@@ -48,12 +48,12 @@ export default function Select({
     };
 
     return (
-        <div ref={selectRef} className={`relative inline-block ${className}`}>
+        <div ref={selectRef} className={`relative inline-block`}>
             {/* Select Button */}
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent bg-white hover:bg-gray-50 transition-colors flex items-center justify-between gap-2 whitespace-nowrap"
+                className={`px-3 py-1.5 text-sm border border-gray-300 ${className} rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent bg-white hover:bg-gray-50 transition-colors flex items-center justify-between gap-2 whitespace-nowrap`}
             >
                 <span className={selectedOption ? 'text-gray-900' : 'text-gray-500'}>
                     {selectedOption ? selectedOption.label : placeholder}
