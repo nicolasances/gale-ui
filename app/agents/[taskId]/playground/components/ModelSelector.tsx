@@ -1,5 +1,7 @@
 'use client';
 
+import Select from '@/components/Select';
+
 interface ModelSelectorProps {
     models: string[];
     selectedModel: string;
@@ -12,17 +14,17 @@ interface ModelSelectorProps {
 export default function ModelSelector({ models, selectedModel, onModelChange }: ModelSelectorProps) {
     if (!models || models.length === 0) return null;
 
+    const options = models.map(model => ({
+        value: model,
+        label: model
+    }));
+
     return (
-        <select
+        <Select
+            options={options}
             value={selectedModel}
-            onChange={(e) => onModelChange(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent bg-white"
-        >
-            {models.map((model) => (
-                <option key={model} value={model}>
-                    {model}
-                </option>
-            ))}
-        </select>
+            onChange={onModelChange}
+            placeholder="Select a model"
+        />
     );
 }
