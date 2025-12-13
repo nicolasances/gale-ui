@@ -29,6 +29,7 @@ export default function PlaygroundPage() {
     const [experiments, setExperiments] = useState<GalePlaygroundExperiment[]>([]);
     const [agentInfo, setAgentInfo] = useState<AgentInfo | null>(null);
     const [selectedModel, setSelectedModel] = useState<string>('');
+    const [executionTime, setExecutionTime] = useState<number | null>(null);
 
     /**
      * Load pre-filled input from sessionStorage if available
@@ -38,17 +39,17 @@ export default function PlaygroundPage() {
     const loadPrefilledInput = (): Record<string, any> | null => {
 
         const storedData = sessionStorage.getItem('playgroundPrefilledInput');
-        
+
         if (storedData) {
             const { taskId: storedTaskId, inputParams: storedInputParams, timestamp } = JSON.parse(storedData);
-            
+
             // Only load if it's for the current agent and was stored recently (within 5 minutes)
             const isRecent = Date.now() - timestamp < 5 * 60 * 1000;
-            
+
             if (storedTaskId === taskId && isRecent) {
                 // Clear the storage after loading to avoid confusion on subsequent visits
                 sessionStorage.removeItem('playgroundPrefilledInput');
-                
+
                 return storedInputParams;
             }
         }
@@ -71,11 +72,11 @@ export default function PlaygroundPage() {
 
             // Check for pre-filled input first
             const prefilledInput = loadPrefilledInput();
-            
+
             // If the input is prefilled from a session (e.g. from the execution node in Executions, when one clicks on "Load in Playground"), use it
             if (prefilledInput) {
                 setInputParams(prefilledInput);
-            } 
+            }
             else if (response.agent.inputSchema?.properties) {
                 // Initialize input params with default values based on schema
                 const defaultParams: Record<string, any> = {};
@@ -96,11 +97,11 @@ export default function PlaygroundPage() {
      */
     const loadAgentInfo = async (agent: AgentDefinition) => {
 
-        const info = await new AgentPlaygroundAPI(agent).getAgentInfo(); 
+        const info = await new AgentPlaygroundAPI(agent).getAgentInfo();
 
         setPrompt(info.promptTemplate || '');
         setAgentInfo(info);
-        
+
         // Set default model to the first allowed model
         if (info.allowedModels && info.allowedModels.length > 0) {
             setSelectedModel(info.allowedModels[0]);
@@ -146,11 +147,17 @@ export default function PlaygroundPage() {
 
         try {
 
+            // Start time
+            const start = Date.now();
+
             // 1. Invoke the Agent
             const response = await new AgentPlaygroundAPI(agent!).sendPrompt(prompt, inputParams, selectedModel);
 
+            const end = Date.now();
+
             // 2. Display the response
             setResult(response);
+            setExecutionTime((end - start) / 1000);
 
 
         } catch (error) {
@@ -300,7 +307,14 @@ export default function PlaygroundPage() {
                     {/* Result Section */}
                     {(result || isLoading) && (
                         <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                            <h3 className="text-base font-semibold text-gray-900 mb-4">Result</h3>
+                            <div className="flex items-start justify-between mb-4">
+                                <h3 className="text-base font-semibold text-gray-900 mb-4">Result</h3>
+                                <div>
+                                    {executionTime !== null && (
+                                        <div className="bg-cyan-200 rounded-full px-2 text-sm" > {executionTime.toFixed(2)} s</div>
+                                    )}
+                                </div>
+                            </div>
 
                             {isLoading ? (
                                 <div className="flex items-center justify-center py-12">
