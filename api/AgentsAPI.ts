@@ -51,7 +51,7 @@ export class AgentPlaygroundAPI {
     /**
      * Retrieves detailed information about the agent from the agent /info endpoint
      */
-    async getAgentInfo(): Promise<GetAgentInfoResponse> {
+    async getAgentInfo(): Promise<AgentInfo> {
 
         let idToken = cookies.get('user') ? cookies.get('user').idToken : null
 
@@ -66,11 +66,11 @@ export class AgentPlaygroundAPI {
             },
         };
 
-        return fetch(`${this.agentDefinition.endpoint.baseURL}${this.agentDefinition.endpoint.infoPath}`, options).then(response => response.json()) as Promise<GetAgentInfoResponse>;
+        return fetch(`${this.agentDefinition.endpoint.baseURL}${this.agentDefinition.endpoint.infoPath}`, options).then(response => response.json()) as Promise<AgentInfo>;
     }
 }
 
-export interface GetAgentInfoResponse {
+export interface AgentInfo {
     agentName: string;
     description: string;
     taskId: string;
@@ -78,4 +78,5 @@ export interface GetAgentInfoResponse {
     outputSchema: any;
     promptTemplate?: string;
     allowedModels: string[];
+    model: string;
 }

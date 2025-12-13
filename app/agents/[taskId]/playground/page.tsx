@@ -8,7 +8,7 @@ import InputParameters from "./components/InputParameters";
 import SessionHistoryPanel from "./components/SessionHistoryPanel";
 import AgentInfoBox from "./components/AgentInfoBox";
 import ModelSelector from "./components/ModelSelector";
-import { AgentPlaygroundAPI } from "@/api/AgentsAPI";
+import { AgentInfo, AgentPlaygroundAPI } from "@/api/AgentsAPI";
 import JsonView from "@uiw/react-json-view";
 import { lightTheme } from "@uiw/react-json-view/light";
 import { GalePlaygroundAPI, GalePlaygroundExperiment } from "@/api/GalePlaygroundAPI";
@@ -27,7 +27,7 @@ export default function PlaygroundPage() {
     const [isHistoryClosing, setIsHistoryClosing] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [experiments, setExperiments] = useState<GalePlaygroundExperiment[]>([]);
-    const [agentInfo, setAgentInfo] = useState<any>(null);
+    const [agentInfo, setAgentInfo] = useState<AgentInfo | null>(null);
     const [selectedModel, setSelectedModel] = useState<string>('');
 
     /**
@@ -260,7 +260,7 @@ export default function PlaygroundPage() {
             </div>
 
             {/* Agent Info Box */}
-            <AgentInfoBox agent={agent} />
+            <AgentInfoBox agent={agent} agentInfo={agentInfo} />
 
             {/* Playground Content */}
             <div className="flex flex-col lg:flex-row gap-6 mt-6">
