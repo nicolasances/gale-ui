@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import InputParameters from "./components/InputParameters";
 import SessionHistoryPanel from "./components/SessionHistoryPanel";
 import AgentInfoBox from "./components/AgentInfoBox";
+import ModelSelector from "./components/ModelSelector";
 import { AgentPlaygroundAPI } from "@/api/AgentsAPI";
 import JsonView from "@uiw/react-json-view";
 import { lightTheme } from "@uiw/react-json-view/light";
@@ -27,6 +28,7 @@ export default function PlaygroundPage() {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [experiments, setExperiments] = useState<GalePlaygroundExperiment[]>([]);
     const [agentInfo, setAgentInfo] = useState<any>(null);
+    const [selectedModel, setSelectedModel] = useState<string>('');
 
     /**
      * Load pre-filled input from sessionStorage if available
@@ -98,6 +100,11 @@ export default function PlaygroundPage() {
 
         setPrompt(info.promptTemplate || '');
         setAgentInfo(info);
+        
+        // Set default model to the first allowed model
+        if (info.allowedModels && info.allowedModels.length > 0) {
+            setSelectedModel(info.allowedModels[0]);
+        }
     }
 
     /**
@@ -140,7 +147,7 @@ export default function PlaygroundPage() {
         try {
 
             // 1. Invoke the Agent
-            const response = await new AgentPlaygroundAPI(agent!).sendPrompt(prompt, inputParams);
+            const response = await new AgentPlaygroundAPI(agent!).sendPrompt(prompt, inputParams, selectedModel);
 
             // 2. Display the response
             setResult(response);
@@ -261,7 +268,14 @@ export default function PlaygroundPage() {
                 <div className="flex-1 space-y-6">
                     {/* Prompt Input Section */}
                     <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                        <h3 className="text-base font-semibold text-gray-900 mb-2">Agent Prompt</h3>
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-base font-semibold text-gray-900">Agent Prompt</h3>
+                            <ModelSelector
+                                models={agentInfo?.allowedModels || []}
+                                selectedModel={selectedModel}
+                                onModelChange={setSelectedModel}
+                            />
+                        </div>
                         <p className="text-xs text-gray-500 mb-4">
                             {agentInfo?.promptTemplate == prompt ? (<span>This is the <span className="font-bold text-gray-900">prompt that the agent is currently using</span>. Feel free to modify it and test different variations.</span>) : 'This is your custom prompt override. If you like it better than the original, ask the Agent Developer to use this one instead.'}
                         </p>

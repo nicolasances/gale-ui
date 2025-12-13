@@ -18,7 +18,7 @@ export class AgentPlaygroundAPI {
      * @param agentInput the input that the agent expects (as defined in the Agent's input schema)
      * @returns the result of the execution
      */
-    async sendPrompt(prompt: string, agentInput: any) {
+    async sendPrompt(prompt: string, agentInput: any, model: string) {
 
         let idToken = cookies.get('user') ? cookies.get('user').idToken : null
 
@@ -39,7 +39,8 @@ export class AgentPlaygroundAPI {
                 correlationId: correlationId,
                 taskInputData: agentInput,
                 playground: {
-                    promptOverride: prompt
+                    promptOverride: prompt, 
+                    modelOverride: model
                 }
             })
         };
@@ -76,4 +77,5 @@ export interface GetAgentInfoResponse {
     inputSchema: any;
     outputSchema: any;
     promptTemplate?: string;
+    allowedModels: string[];
 }
