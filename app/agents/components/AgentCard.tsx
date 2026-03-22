@@ -1,26 +1,37 @@
 'use client';
 
-import { AgentDefinition } from "@/api/GaleBrokerAPI";
+import { AgentDefinition, getAgentIdentifier } from "@/api/GaleBrokerAPI";
 import { useRouter } from "next/navigation";
 
 export function AgentCard({ agent }: { agent: AgentDefinition }) {
 
     const router = useRouter();
+    const isConversational = agent.agentType === 'conversational';
+    const identifier = getAgentIdentifier(agent);
 
     return (
         <div 
             className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
-            onClick={() => router.push(`/agents/${encodeURIComponent(agent.taskId)}`)}
+            onClick={() => router.push(`/agents/${encodeURIComponent(identifier)}`)}
         >
 
             <div className="flex items-start justify-between mb-3">
                 <div>
                     <div className="text-base font-semibold text-gray-900">{agent.name}</div>
-                    <div className="text-xs text-blue-600">Task Identifier: <span className="font-mono text-gray-700 font-bold">{agent.taskId}</span></div>
+                    <div className="text-xs text-blue-600">
+                        {isConversational ? 'Agent ID' : 'Task Identifier'}: <span className="font-mono text-gray-700 font-bold">{identifier}</span>
+                    </div>
                 </div>
-                <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                    Active
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                    <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                        Active
+                    </span>
+                    {isConversational && (
+                        <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                            Conversational
+                        </span>
+                    )}
+                </div>
             </div>
 
             <p className="text-xs text-gray-700 mb-2">{agent.description}</p>
