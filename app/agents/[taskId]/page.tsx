@@ -1,6 +1,6 @@
 'use client';
 
-import { AgentDefinition, GaleBrokerAPI } from "@/api/GaleBrokerAPI";
+import { AgentDefinition, GaleBrokerAPI, getAgentIdentifier } from "@/api/GaleBrokerAPI";
 import Button from "@/components/Button";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -95,8 +95,8 @@ export default function AgentDetailPage() {
                         </div>
                         <div className="flex gap-8">
                             <div>
-                                <p className="text-xs text-gray-500 mb-1">Task ID</p>
-                                <p className="font-mono text-sm font-semibold text-gray-900">{agent.taskId}</p>
+                                <p className="text-xs text-gray-500 mb-1">{agent.agentType === 'conversational' ? 'Agent ID' : 'Task ID'}</p>
+                                <p className="font-mono text-sm font-semibold text-gray-900">{getAgentIdentifier(agent)}</p>
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500 mb-1">ID</p>

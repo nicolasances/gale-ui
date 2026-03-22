@@ -116,10 +116,24 @@ export interface AgentDefinition {
     id: string; // The unique identifier of the Agent (i.e. DB ID)
     name: string; // The name of the Agent.
     description: string; // The description of the Agent.
-    taskId: string; // The unique identifier of the type of task this Agent can execute.
+    agentType?: 'taskExecutor' | 'conversational'; // The type of agent
+    taskId: string; // The unique identifier of the type of task this Agent can execute. Empty for conversational agents.
+    agentId?: string; // The unique identifier for conversational agents.
     inputSchema: any;
     outputSchema: any;
     endpoint: AgentEndpoint;
+}
+
+/**
+ * Returns the identifier used to route to this agent's detail page.
+ * Conversational agents are identified by agentId; task executors use taskId.
+ * Falls back to the DB id if neither is available.
+ */
+export function getAgentIdentifier(agent: AgentDefinition): string {
+    if (agent.agentType === 'conversational') {
+        return agent.agentId || agent.id;
+    }
+    return agent.taskId;
 }
 
 export interface AgentEndpoint {
