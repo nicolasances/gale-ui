@@ -6,7 +6,6 @@ on:
       - 'feature/**'
       - 'issue/**'
       - dev
-      - main
 
 jobs:
   # This workflow contains a single job called "release"
