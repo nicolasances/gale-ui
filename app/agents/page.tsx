@@ -28,7 +28,7 @@ export default function AgentsPage() {
       <p className="text-sm text-gray-600 mb-8">Available agents registered in Gale</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {agents.map((agent) => (<AgentCard key={agent.taskId} agent={agent} />))}
+        {agents.map((agent) => (<AgentCard key={agent.id} agent={agent} />))}
       </div>
     </div>
   );
